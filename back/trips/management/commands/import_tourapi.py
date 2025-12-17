@@ -1,6 +1,6 @@
 import requests
 import time
-from urllib.parse import unquote # 키 안전장치
+from urllib.parse import unquote
 from django.core.management.base import BaseCommand
 from trips.models import Trip, TripImage, Region, City, Category
 from decouple import config
@@ -12,7 +12,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--area-code',
             type=str,
-            help='Area code (1=서울, 6=부산, 39=제주 등)',
+            nargs='?', 
+            help='Area code (If empty, imports ALL regions)',
         )
 
     def handle(self, *args, **options):
@@ -20,75 +21,95 @@ class Command(BaseCommand):
         API_KEY = unquote(raw_key)
         BASE_URL = 'https://apis.data.go.kr/B551011/KorService2'
         endpoint = '/areaBasedList2'
-        
-        area_code = options.get('area_code', '1')
-        self.stdout.write(f'Importing ALL data for area code: {area_code}')
 
-        page = 1 
-        total_imported = 0
+        ALL_REGIONS = {
+            '1': '서울', '2': '인천', '3': '대전', '4': '대구', '5': '광주', 
+            '6': '부산', '7': '울산', '8': '세종', '31': '경기', '32': '강원', 
+            '33': '충북', '34': '충남', '35': '경북', '36': '경남', '37': '전북', 
+            '38': '전남', '39': '제주'
+        }
 
-        while True:
-            self.stdout.write(f'Fetching page {page}...')
+        input_code = options.get('area_code')
+        if input_code:
+            target_regions = {input_code: ALL_REGIONS.get(input_code, 'Unknown')}
+        else:
+            target_regions = ALL_REGIONS
 
-            params = {
-                'serviceKey': API_KEY,
-                'numOfRows': 100,     
-                'pageNo': page,    
-                'MobileOS': 'ETC',
-                'MobileApp': 'TripPlanner',
-                'areaCode': area_code,
-                'arrange': 'A',
-                '_type': 'json',
-                'contentTypeId': '12'
-            }
+        content_types = {
+            '12': '관광지', '14': '문화시설', '15': '축제/공연', '25': '여행코스',
+            '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점'
+        }
+
+        self.stdout.write(self.style.SUCCESS(f'Target Regions: {list(target_regions.values())}'))
+
+
+        for area_code, area_name in target_regions.items():
+            self.stdout.write(self.style.WARNING(f'\n\n🚀 Starting Region: {area_name} (Code: {area_code})'))
             
-            try:
-                response = requests.get(
-                    f'{BASE_URL}{endpoint}',
-                    params=params,
-                    timeout=30
-                )
+            for c_id, c_name in content_types.items():
+                self.stdout.write(f'\n  Category: {c_name} (Code: {c_id})')
                 
-                if response.status_code != 200:
-                    self.stdout.write(self.style.ERROR(f'API Error on page {page}: {response.status_code}'))
-                    break
+                page = 1
+                total_imported_in_category = 0
 
-                data = response.json()
-                
-                items = []
-                if 'response' in data and 'body' in data['response']:
-                    body = data['response']['body']
-                    if 'items' in body and body['items']:
-                        items = body['items']['item']
-                        if not isinstance(items, list):
-                            items = [items]
+                while True:
+                    params = {
+                        'serviceKey': API_KEY,
+                        'numOfRows': 100,
+                        'pageNo': page,
+                        'MobileOS': 'ETC',
+                        'MobileApp': 'TripPlanner',
+                        'areaCode': area_code,
+                        'arrange': 'A',
+                        '_type': 'json',
+                        'contentTypeId': c_id
+                    }
                     
-                    if not items:
-                        self.stdout.write(self.style.SUCCESS('No more items. Finished!'))
+                    try:
+                        response = requests.get(f'{BASE_URL}{endpoint}', params=params, timeout=30)
+                        
+                        if response.status_code != 200:
+                            self.stdout.write(self.style.ERROR(f'API Error: {response.status_code}'))
+                            break
+
+                        data = response.json()
+                        items = []
+                        
+                        if 'response' in data and 'body' in data['response']:
+                            body = data['response']['body']
+                            if 'items' in body and body['items']:
+                                items = body['items']['item']
+                                if not isinstance(items, list):
+                                    items = [items]
+                            
+                            if not items:
+                                break
+                        else:
+                            break
+
+                        count = 0
+                        for item in items:
+                            if self.process_item(item):
+                                count += 1
+                                total_imported_in_category += 1
+                        
+                        self.stdout.write(f'    - {area_name} | {c_name} | p.{page}: Saved {count} items')
+                        
+                        if len(items) < 100:
+                            break
+                        
+                        page += 1
+                        
+                        time.sleep(0.2) 
+
+                    except Exception as e:
+                        self.stdout.write(self.style.ERROR(f'Error: {str(e)}'))
                         break
-                else:
-                    self.stdout.write(self.style.ERROR('Invalid response structure'))
-                    break
-
-                count = 0
-                for item in items:
-                    if self.process_item(item):
-                        count += 1
-                        total_imported += 1
                 
-                self.stdout.write(f'  - Saved {count} items on page {page}')
-                
-                if len(items) < 100:
-                    self.stdout.write(self.style.SUCCESS(f'Reached the last page. Total imported: {total_imported}'))
-                    break
-                
-                page += 1
-                time.sleep(0.1)
 
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f'Error on page {page}: {str(e)}'))
-                break
+                self.stdout.write(self.style.SUCCESS(f'  -> Finished {c_name} in {area_name}: {total_imported_in_category} items'))
 
+    
     def process_item(self, item):
         try:
             if not item.get('contentid') or not item.get('title'):
@@ -120,13 +141,9 @@ class Command(BaseCommand):
             
             if created or not trip.images.exists():
                 self.fetch_images(trip, item['contentid'])
-            
-            action = 'Created' if created else 'Updated'
-            self.stdout.write(f'{action}: {trip.title}')
             return True
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error processing item: {str(e)}'))
             return False
 
     def get_or_create_region(self, areacode):
