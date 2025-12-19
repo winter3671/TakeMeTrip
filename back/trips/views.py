@@ -1,11 +1,12 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from .models import Trip, Wishlist
 from .serializers import TripListSerializer, TripDetailSerializer
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 
 class TripListView(generics.ListAPIView):
     serializer_class = TripListSerializer
@@ -64,3 +65,18 @@ class MyWishlistView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return Trip.objects.filter(wishlists__user=user).order_by('-wishlists__created_at')
+    
+class TripListView(ListAPIView):
+    queryset = Trip.objects.all()
+    serializer_class = TripListSerializer
+    
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = ['region', 'city', 'category'] 
+    search_fields = ['title', 'overview', 'road_address']
+    ordering_fields = ['recommendation_score', 'created_at', 'id']
+    ordering = ['-created_at']
