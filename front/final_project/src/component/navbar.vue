@@ -2,9 +2,10 @@
   <div>
     <nav class="navbar">
       <div class="container-fluid">
-        <a href="#" class="navbar-brand">
+        <RouterLink :to="{ name: 'home' }" class="navbar-brand">
           <img class="logo-image" src="/logo.png" alt="TakeMeTrip">
-        </a>
+        </RouterLink>
+        
         <div class="search-wrapper">
           <input 
             type="text" 
@@ -20,34 +21,35 @@
         
         <div class="desktop-menu">
           <div class="nav-menu">
-            <a href="#" class="nav-link">
+            <RouterLink :to="{ name: 'home' }" class="nav-link">
               <span>홈</span>
-            </a>
-            <a href="#" class="nav-link">
+            </RouterLink>
+            <RouterLink :to="{ name: 'information' }" class="nav-link">
               <span>여행정보</span>
-            </a>
-            <a href="#" class="nav-link">
+            </RouterLink>
+            <RouterLink :to="{ name: 'location' }" class="nav-link">
               <span>여행지역</span>
-            </a>
-            <a href="#" class="nav-link">
+            </RouterLink>
+            <RouterLink :to="{ name: 'course' }" class="nav-link">
               <span>여행코스</span>
-            </a>
-            <a href="#" class="nav-link">
+            </RouterLink>
+            <RouterLink :to="{ name: 'community' }" class="nav-link">
               <span>커뮤니티</span>
-            </a>
+            </RouterLink>
           </div>
+          
           <div class="icon-menu">
-            <button class="icon-btn">
+            <button @click="gotoMap" class="icon-btn" title="지도">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
               </svg>
             </button>
-            <button class="icon-btn">
+            <button @click="gotoProfile" class="icon-btn" title="프로필">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
               </svg>
             </button>
-            <button class="icon-btn">
+            <button class="icon-btn" title="언어">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h3.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
               </svg>
@@ -56,27 +58,38 @@
         </div>
 
         <button class="hamburger-btn" @click="toggleMenu">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+          </svg>
         </button>
       </div>
 
       <div class="mobile-menu" :class="{ active: isMenuOpen }">
         <div class="mobile-menu-content">
-          <a href="#" class="mobile-nav-link">홈</a>
-          <a href="#" class="mobile-nav-link">여행정보</a>
-          <a href="#" class="mobile-nav-link">여행지역</a>
-          <a href="#" class="mobile-nav-link">여행코스</a>
-          <a href="#" class="mobile-nav-link">커뮤니티</a>
+          <RouterLink :to="{ name: 'home' }" class="mobile-nav-link" @click="closeMenu">홈</RouterLink>
+          <RouterLink :to="{ name: 'information' }" class="mobile-nav-link" @click="closeMenu">여행정보</RouterLink>
+          <RouterLink :to="{ name: 'location' }" class="mobile-nav-link" @click="closeMenu">여행지역</RouterLink>
+          <RouterLink :to="{ name: 'course' }" class="mobile-nav-link" @click="closeMenu">여행코스</RouterLink>
+          <RouterLink :to="{ name: 'community' }" class="mobile-nav-link" @click="closeMenu">커뮤니티</RouterLink>
+          
           <div class="mobile-icon-menu">
-            <button class="mobile-icon-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"></svg>
-
+            <button class="mobile-icon-btn" @click="gotoMap">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
+              </svg>
+              <span>지도</span>
+            </button>
+            <button class="mobile-icon-btn" @click="gotoProfile">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+              </svg>
+              <span>프로필</span>
             </button>
             <button class="mobile-icon-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"></svg>
-            </button>
-            <button class="mobile-icon-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h3.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
+              </svg>
+              <span>언어</span>
             </button>
           </div>
         </div>
@@ -87,12 +100,30 @@
 
 <script setup>
 import { ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 
+const router = useRouter()
 const isMenuOpen = ref(false)
+const searchQuery = ref('')
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
+
+const closeMenu = () => {
+  isMenuOpen.value = false
+}
+
+const gotoMap = () => {
+  router.push({ name: 'map' })
+  closeMenu()
+}
+
+const gotoProfile = () => {
+  router.push({ name: 'profile' })
+  closeMenu()
+}
+
 </script>
 
 <style scoped>
@@ -138,6 +169,7 @@ const toggleMenu = () => {
   width: 350px;
   flex-shrink: 1;
   min-width: 200px;
+  margin-right: auto;
 }
 
 .search-input {
@@ -148,6 +180,11 @@ const toggleMenu = () => {
   font-size: 0.95rem;
   outline: none;
   transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-input::placeholder {
@@ -169,7 +206,11 @@ const toggleMenu = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+}
+
+.search-btn:hover {
+  background: #f3f4f6;
 }
 
 .search-btn:active {
@@ -180,7 +221,6 @@ const toggleMenu = () => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-left: auto;
   flex-shrink: 0;
 }
 
@@ -197,10 +237,26 @@ const toggleMenu = () => {
   font-weight: 500;
   transition: color 0.2s;
   white-space: nowrap;
+  position: relative;
 }
 
 .nav-link:hover {
   color: #3b82f6;
+}
+
+.nav-link.router-link-active {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.nav-link.router-link-active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.75rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3b82f6;
 }
 
 .icon-menu {
@@ -238,6 +294,11 @@ const toggleMenu = () => {
   flex-shrink: 0;
 }
 
+.hamburger-btn:hover {
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
 .mobile-menu {
   display: none;
   max-height: 0;
@@ -265,6 +326,16 @@ const toggleMenu = () => {
   font-weight: 500;
   padding: 0.75rem 0;
   border-bottom: 1px solid #f3f4f6;
+  transition: color 0.2s;
+}
+
+.mobile-nav-link:hover {
+  color: #3b82f6;
+}
+
+.mobile-nav-link.router-link-active {
+  color: #3b82f6;
+  font-weight: 600;
 }
 
 .mobile-icon-menu {
@@ -287,6 +358,13 @@ const toggleMenu = () => {
   color: #6b7280;
   cursor: pointer;
   font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.mobile-icon-btn:hover {
+  background: #f9fafb;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 @media (max-width: 1024px) {
@@ -304,6 +382,7 @@ const toggleMenu = () => {
 
   .search-wrapper {
     width: 300px;
+    margin-right: 0;
   }
 }
 
