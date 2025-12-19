@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/trips/", include("trips.urls")),
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("api/auth/social/", include("users.urls")),
 ]
 
 if settings.DEBUG:

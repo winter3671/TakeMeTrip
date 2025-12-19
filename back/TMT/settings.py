@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -46,6 +47,10 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'corsheaders',
+
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.kakao',
+    'allauth.socialaccount.providers.naver',
 
     'users',
     'trips',
@@ -108,7 +113,7 @@ SIMPLE_JWT = {
 }
 
 WSGI_APPLICATION = "TMT.wsgi.application"
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -166,10 +171,23 @@ REST_AUTH = {
     'JWT_AUTH_COOKIE': 'tmt-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'tmt-refresh-token',
     'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
 }
 
 SITE_ID = 1
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+ACCOUNT_LOGIN_METHODS = {'email'} 
+ACCOUNT_SIGNUP_FIELDS = [
+    'email', 
+]
+ACCOUNT_USERNAME_REQUIRED = False 
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+    },
+    'kakao': {
+        'KEY': 'pixel_ratio',
+    },
+}
