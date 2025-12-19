@@ -2,7 +2,7 @@ import requests
 import time
 from urllib.parse import unquote
 from django.core.management.base import BaseCommand
-from trips.models import Trip, TripImage, Region, City, Category
+from trips.models import Trip, TripImage, Region, City, Category, Tag, TripTag
 from decouple import config
 from datetime import datetime
 
@@ -173,6 +173,8 @@ class Command(BaseCommand):
                 }
             )
             
+            self.create_tags(trip, item)
+
             if created or not trip.images.exists():
                 self.fetch_images(trip, item['contentid'])
             return True
@@ -188,6 +190,27 @@ class Command(BaseCommand):
             return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
         except:
             return None
+        
+    def create_tags(self, trip, item):
+        tags_to_create = []
+
+        if trip.region:
+            tags_to_create.append(f"#{trip.region.name}")
+
+        if trip.city:
+            tags_to_create.append(f"#{trip.city.name}")
+
+        title = item.get('title', '')
+        keywords = ['맛집', '카페', '호텔', '바다', '산', '박물관', '공원', 
+                '사찰', '전통', '야경', '데이트', '가족', '아이', '체험']
+        
+        for keyword in keywords:
+            if keyword in title:
+                tags_to_create.append(f"#{keyword}")
+
+        for tag_name in tags_to_create:
+            tag, _ = Tag.objects.get_or_create(name=tag_name)
+            TripTag.objects.get_or_create(trip=trip, tag=tag)
 
     def get_or_create_region(self, areacode):
         AREA_MAP = {
