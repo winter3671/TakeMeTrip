@@ -65,6 +65,9 @@ class Trip(models.Model):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
 
+    mapx = models.FloatField(default=0.0) # 경도
+    mapy = models.FloatField(default=0.0) # 위도
+
     class Meta:
         db_table = 'trips'
 
