@@ -12,19 +12,28 @@ from .serializers import TripListSerializer, TripDetailSerializer, CategorySeria
 
 # 1. 여행지 목록 조회 (필터링, 검색, 정렬 포함 - 최신 버전)
 class TripListView(ListAPIView):
-    queryset = Trip.objects.all()
     serializer_class = TripListSerializer
     
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
-
-    filterset_fields = ['region', 'city', 'category'] 
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'overview', 'road_address']
-    ordering_fields = ['recommendation_score', 'created_at', 'id']
-    ordering = ['-created_at']
+    ordering_fields = ['recommendation_score', 'created_at']
+
+    def get_queryset(self):
+        queryset = Trip.objects.filter(status='active')
+
+        area_name = self.request.query_params.get('area', None)
+        category_id = self.request.query_params.get('category', None)
+        if area_name:
+            queryset = queryset.filter(
+                Q(destination__contains=area_name) | 
+                Q(city__name__contains=area_name) |
+                Q(region__name__contains=area_name)
+            )
+
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+
+        return queryset.order_by('-recommendation_score')
 
 # 2. 여행지 상세 조회
 class TripDetailView(generics.RetrieveAPIView):
