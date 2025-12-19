@@ -1,63 +1,70 @@
 <template>
   <div class="map-wrapper">
-    <div class="sidebar">
-      <div class="address-box">
-        <span class="address-label">현재 위치</span>
-        <h2 class="address-text">{{ currentAddress || '위치 확인 중...' }}</h2>
-      </div>
-
-      <div class="category-box">
-        <ul class="category-list">
-          <li v-for="item in categories" :key="item.id">
-            <button 
-              class="category-btn" 
-              :class="{ 'active': selectedCategory === item.id }"
-              @click="selectCategory(item.id)"
-            >
-              <span class="icon">{{ item.icon }}</span> 
-              <span class="label">{{ item.name }}</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <div class="place-list-box">
-        <div v-if="isLoading" class="status-msg">
-          데이터를 불러오는 중...
+    <div class="sidebar" :class="{ 'closed': !isSidebarOpen }">
+      
+      <div class="sidebar-content">
+        <div class="address-box">
+          <span class="address-label">현재 위치</span>
+          <h2 class="address-text">{{ currentAddress || '위치 확인 중...' }}</h2>
         </div>
 
-        <ul v-else-if="places.length > 0" class="place-list">
-          <li v-for="place in places" :key="place.id" class="place-item" @click="moveToPlace(place)">
-            
-            <div class="place-thumb">
-              <img v-if="place.thumbnail_image" :src="place.thumbnail_image" alt="img" />
-              <div v-else class="no-img">No Image</div>
-            </div>
+        <div class="category-box">
+          <ul class="category-list">
+            <li v-for="item in categories" :key="item.id">
+              <button 
+                class="category-btn" 
+                :class="{ 'active': selectedCategory === item.id }"
+                @click="selectCategory(item.id)"
+              >
+                <span class="icon">{{ item.icon }}</span> 
+                <span class="label">{{ item.name }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
 
-            <div class="place-info">
-              <div class="info-top">
-                <strong class="place-title">{{ place.title }}</strong>
-                <span class="place-cat">{{ place.category_name }}</span>
-              </div>
-              
-              <span class="place-dist" v-if="myLocation">
-                내 위치로부터 {{ getDistanceFromLatLon(myLocation.lat, myLocation.lng, place.mapy, place.mapx) }}
-              </span>
-              
-              <div class="bookmark-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                </svg>
-              </div>
-            </div>
-          </li>
-        </ul>
+        <div class="place-list-box">
+          <div v-if="isLoading" class="status-msg">
+            데이터를 불러오는 중...
+          </div>
 
-        <div v-else class="status-msg empty">
-          <span class="empty-icon">😢</span>
-          <p>이 주변에는 여행지가 없네요.</p>
+          <ul v-else-if="places.length > 0" class="place-list">
+            <li v-for="place in places" :key="place.id" class="place-item" @click="moveToPlace(place)">
+              <div class="place-thumb">
+                <img v-if="place.thumbnail_image" :src="place.thumbnail_image" alt="img" />
+                <div v-else class="no-img">No Image</div>
+              </div>
+              <div class="place-info">
+                <div class="info-top">
+                  <strong class="place-title">{{ place.title }}</strong>
+                  <span class="place-cat">{{ place.category_name }}</span>
+                </div>
+                <span class="place-dist" v-if="myLocation">
+                  내 위치로부터 {{ getDistanceFromLatLon(myLocation.lat, myLocation.lng, place.mapy, place.mapx) }}
+                </span>
+                <div class="bookmark-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <div v-else class="status-msg empty">
+            <span class="empty-icon">😢</span>
+            <p>이 주변에는 여행지가 없네요.</p>
+          </div>
         </div>
       </div>
+
+      <button class="sidebar-toggle-btn" @click="toggleSidebar" title="사이드바 토글">
+        <svg v-if="isSidebarOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline> </svg>
+        <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline> </svg>
+      </button>
+
     </div>
 
     <div id="map"></div>
@@ -94,6 +101,8 @@ const selectedCategory = ref(null);
 const isLoading = ref(false);
 const myLocation = ref(null);
 
+const isSidebarOpen = ref(true);
+
 const iconMap = {
   '관광지': '🚗', '문화시설': '🏛️', '축제/공연': '🎉',
   '여행코스': '🗺️', '레포츠': '⚽', '숙박': '🏠',
@@ -111,6 +120,10 @@ onMounted(async () => {
     document.head.appendChild(script);
   }
 });
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
 
 const fetchCategories = async () => {
   try {
@@ -172,6 +185,13 @@ const updateMarkers = () => {
       position: position,
       map: map,
       title: place.title
+    });
+
+    window.kakao.maps.event.addListener(marker, 'click', () => {
+      map.panTo(position);
+      if (!isSidebarOpen.value) {
+        isSidebarOpen.value = true;
+      }
     });
 
     markers.push(marker);
@@ -259,7 +279,6 @@ const searchAddrFromCoords = (lng, lat) => {
 
 const getDistanceFromLatLon = (lat1, lon1, lat2, lon2) => {
   if (!lat1 || !lon1 || !lat2 || !lon2) return "";
-  
   const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
@@ -268,14 +287,11 @@ const getDistanceFromLatLon = (lat1, lon1, lat2, lon2) => {
             Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   const d = R * c; 
-  
   if (d < 1) return (d * 1000).toFixed(0) + "m";
   return d.toFixed(1) + "km";
 }
 
-const deg2rad = (deg) => {
-  return deg * (Math.PI/180);
-}
+const deg2rad = (deg) => { return deg * (Math.PI/180); }
 
 const moveToPlace = (place) => {
   if(!map) return;
@@ -298,8 +314,38 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
   width: 360px; height: 100%;
   background-color: white; z-index: 20;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(0);
+}
+
+.sidebar.closed {
+  transform: translateX(-100%);
+}
+
+.sidebar-content {
+  width: 100%; height: 100%;
   display: flex; flex-direction: column;
 }
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: -24px;
+  width: 24px;
+  height: 48px;
+  transform: translateY(-50%);
+  background-color: white;
+  border: 1px solid #ddd;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  z-index: 21;
+}
+.sidebar-toggle-btn:hover { background-color: #f7f7f7; }
 
 .address-box { padding: 24px 20px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
 .address-label { font-size: 13px; color: #888; display: block; margin-bottom: 4px; }
@@ -319,38 +365,22 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 .place-list { list-style: none; padding: 0; margin: 0; }
 
 .place-item {
-  display: flex;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f5f5f5;
-  cursor: pointer;
-  transition: background 0.2s;
+  display: flex; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s;
 }
 .place-item:hover { background-color: #f9f9f9; }
 
 .place-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-right: 16px;
-  flex-shrink: 0;
-  background-color: #eee;
-  border: 1px solid #f0f0f0;
+  width: 72px; height: 72px; border-radius: 12px; overflow: hidden; margin-right: 16px; flex-shrink: 0; background-color: #eee; border: 1px solid #f0f0f0;
 }
 .place-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; }
 
 .place-info { flex: 1; display: flex; flex-direction: column; position: relative; justify-content: center; }
-
 .info-top { margin-bottom: 4px; }
 .place-title { font-size: 16px; font-weight: 700; color: #333; margin-right: 6px; }
 .place-cat { font-size: 12px; color: #999; }
-
 .place-dist { font-size: 13px; color: #666; margin-top: 4px; }
-
-.bookmark-icon {
-  position: absolute; bottom: 0; right: 0;
-}
+.bookmark-icon { position: absolute; bottom: 0; right: 0; }
 
 .status-msg { padding: 40px; text-align: center; color: #999; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .status-msg.empty .empty-icon { font-size: 32px; }
