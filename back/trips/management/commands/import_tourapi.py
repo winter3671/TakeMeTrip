@@ -4,6 +4,7 @@ from urllib.parse import unquote
 from django.core.management.base import BaseCommand
 from trips.models import Trip, TripImage, Region, City, Category
 from decouple import config
+from datetime import datetime
 
 class Command(BaseCommand):
     help = 'Import data from TourAPI'
@@ -20,7 +21,8 @@ class Command(BaseCommand):
         raw_key = config('TOUR_API_KEY')
         API_KEY = unquote(raw_key)
         BASE_URL = 'https://apis.data.go.kr/B551011/KorService2'
-        endpoint = '/areaBasedList2'
+        
+        today_str = datetime.now().strftime('%Y%m%d')
 
         ALL_REGIONS = {
             '1': '서울', '2': '인천', '3': '대전', '4': '대구', '5': '광주', 
@@ -51,6 +53,14 @@ class Command(BaseCommand):
                 page = 1
                 total_imported_in_category = 0
 
+                if c_id == '15':
+                    endpoint = '/searchFestival2'
+                    base_params = {'eventStartDate': today_str, 'arrange': 'A'}
+                    self.stdout.write(f'   -> (Mode: Festival Search from {today_str})')
+                else:
+                    endpoint = '/areaBasedList2'
+                    base_params = {'arrange': 'A', 'contentTypeId': c_id}
+
                 while True:
                     params = {
                         'serviceKey': API_KEY,
@@ -59,18 +69,38 @@ class Command(BaseCommand):
                         'MobileOS': 'ETC',
                         'MobileApp': 'TripPlanner',
                         'areaCode': area_code,
-                        'arrange': 'A',
                         '_type': 'json',
-                        'contentTypeId': c_id
                     }
+                    params.update(base_params)
                     
-                    try:
-                        response = requests.get(f'{BASE_URL}{endpoint}', params=params, timeout=30)
-                        
-                        if response.status_code != 200:
-                            self.stdout.write(self.style.ERROR(f'API Error: {response.status_code}'))
-                            break
+                    # 재시도(Retry)
+                    max_retries = 3  # 최대 3번까지 재시도
+                    response = None
+                    success = False
 
+                    for attempt in range(max_retries):
+                        try:
+                            response = requests.get(f'{BASE_URL}{endpoint}', params=params, timeout=30)
+                            
+                            if response.status_code == 200:
+                                success = True
+                                break 
+                            elif response.status_code == 502:
+                                # 502 에러면 잠시 쉬었다가 재시도
+                                self.stdout.write(self.style.WARNING(f'    ⚠️ 502 Bad Gateway. Retrying... ({attempt+1}/{max_retries})'))
+                                time.sleep(3) 
+                            else:
+                                self.stdout.write(self.style.ERROR(f'API Error: {response.status_code}'))
+                                break
+                        except requests.exceptions.RequestException as e:
+                            self.stdout.write(self.style.WARNING(f'    ⚠️ Connection Error. Retrying... ({attempt+1}/{max_retries})'))
+                            time.sleep(3)
+
+                    if not success or response is None or response.status_code != 200:
+                        self.stdout.write(self.style.ERROR(f'    ❌ Failed to fetch page {page} after retries. Moving to next category.'))
+                        break
+
+                    try:
                         data = response.json()
                         items = []
                         
@@ -82,7 +112,7 @@ class Command(BaseCommand):
                                     items = [items]
                             
                             if not items:
-                                break
+                                break 
                         else:
                             break
 
@@ -95,19 +125,17 @@ class Command(BaseCommand):
                         self.stdout.write(f'    - {area_name} | {c_name} | p.{page}: Saved {count} items')
                         
                         if len(items) < 100:
-                            break
+                            break 
                         
                         page += 1
-                        
-                        time.sleep(0.2) 
+                        time.sleep(0.5)
 
                     except Exception as e:
-                        self.stdout.write(self.style.ERROR(f'Error: {str(e)}'))
+                        self.stdout.write(self.style.ERROR(f'Error processing data: {str(e)}'))
                         break
                 
-                self.stdout.write(self.style.SUCCESS(f'  -> Finished {c_name} in {area_name}: {total_imported_in_category} items'))
+                self.stdout.write(self.style.SUCCESS(f'  -> Finished {c_name} in {area_name}: {total_imported_in_category} items'))    
 
-    
     def process_item(self, item, area_code):
         try:
             if not item.get('contentid') or not item.get('title'):
@@ -118,8 +146,14 @@ class Command(BaseCommand):
             if item.get('sigungucode'):
                 city = self.get_or_create_city(item.get('sigungucode'), area_code, region)
             
-            category = self.get_or_create_category(item.get('contenttypeid', '12'))
+            # contentTypeId가 없는 경우 기본값 처리
+            content_type_id = item.get('contenttypeid', '12')
+            category = self.get_or_create_category(content_type_id)
             
+            # 날짜 포맷 변환 (YYYYMMDD -> YYYY-MM-DD)
+            start_date = self.parse_date(item.get('eventstartdate'))
+            end_date = self.parse_date(item.get('eventenddate'))
+
             trip, created = Trip.objects.update_or_create(
                 external_id=item['contentid'],
                 defaults={
@@ -134,6 +168,8 @@ class Command(BaseCommand):
                     'duration': 1,
                     'status': 'active',
                     'recommendation_score': self.calculate_score(item),
+                    'start_date': start_date,
+                    'end_date': end_date,
                 }
             )
             
@@ -143,6 +179,15 @@ class Command(BaseCommand):
             
         except Exception as e:
             return False
+
+    def parse_date(self, date_str):
+        if not date_str or len(str(date_str)) != 8:
+            return None
+        try:
+            date_str = str(date_str)
+            return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+        except:
+            return None
 
     def get_or_create_region(self, areacode):
         AREA_MAP = {
@@ -162,8 +207,7 @@ class Command(BaseCommand):
 
     def get_or_create_city(self, sigungucode, area_code, region):
         """시군구 실제 이름 매핑"""
-        
-        # 전국 시군구 매핑
+
         # 전국 시군구 매핑
         SIGUNGU_MAP = {
             # 서울 (1)
