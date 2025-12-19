@@ -1,6 +1,9 @@
-from django.shortcuts import render
-from rest_framework import generics
-from .models import Trip
+from django.shortcuts import render, get_object_or_404
+from rest_framework import generics, status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
+from .models import Trip, Wishlist
 from .serializers import TripListSerializer, TripDetailSerializer
 from django.db.models import Q
 
@@ -38,3 +41,26 @@ class TripListView(generics.ListAPIView):
 class TripDetailView(generics.RetrieveAPIView):
     queryset = Trip.objects.filter(status='active')
     serializer_class = TripDetailSerializer
+
+class TripLikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated] 
+
+    def post(self, request, pk):
+        trip = get_object_or_404(Trip, pk=pk)
+        user = request.user
+
+        wishlist, created = Wishlist.objects.get_or_create(user=user, trip=trip)
+
+        if not created:
+            wishlist.delete()
+            return Response({'status': 'unliked', 'is_liked': False}, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'liked', 'is_liked': True}, status=status.HTTP_201_CREATED)
+        
+class MyWishlistView(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TripListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Trip.objects.filter(wishlists__user=user).order_by('-wishlists__created_at')

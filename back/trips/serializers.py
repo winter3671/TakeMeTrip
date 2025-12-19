@@ -10,6 +10,7 @@ class TripListSerializer(serializers.ModelSerializer):
     region_name = serializers.ReadOnlyField(source='region.name')
     city_name = serializers.ReadOnlyField(source='city.name')
     category_name = serializers.ReadOnlyField(source='category.name')
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
@@ -23,7 +24,14 @@ class TripListSerializer(serializers.ModelSerializer):
             'recommendation_score',
             'mapx', 
             'mapy',
+            'is_liked',
         ]
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.wishlists.filter(user=request.user).exists()
+        return False
 
 class TripDetailSerializer(serializers.ModelSerializer):
     region_name = serializers.ReadOnlyField(source='region.name')
