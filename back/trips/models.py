@@ -1,5 +1,6 @@
 from django.db import models
 from users.models import User
+from django.conf import settings
 
 class Region(models.Model):
     name = models.CharField(max_length=50)
@@ -98,3 +99,16 @@ class TripTag(models.Model):
     class Meta:
         db_table = 'trip_tags'
         unique_together = ['trip', 'tag']
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlists')
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='wishlists')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'wishlists'
+        unique_together = ('user', 'trip')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.trip.title}"
