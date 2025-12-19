@@ -170,6 +170,8 @@ class Command(BaseCommand):
                     'recommendation_score': self.calculate_score(item),
                     'start_date': start_date,
                     'end_date': end_date,
+                    'mapx': float(item.get('mapx', 0.0) or 0.0), # 경도
+                    'mapy': float(item.get('mapy', 0.0) or 0.0), # 위도
                 }
             )
             

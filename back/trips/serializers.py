@@ -21,6 +21,8 @@ class TripListSerializer(serializers.ModelSerializer):
             'city_name', 
             'category_name', 
             'recommendation_score',
+            'mapx', 
+            'mapy',
         ]
 
 class TripDetailSerializer(serializers.ModelSerializer):
