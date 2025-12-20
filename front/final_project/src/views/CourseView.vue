@@ -3,7 +3,7 @@
     <div class="course-section">
       
       <div class="list-header">
-        <h2 class="header-title">#여행코스</h2>
+        <h2 class="header-title">#{{ selectedTag }}</h2>
         <div class="header-utils">
           <span class="total-count">총 {{ store.totalCount }} 건</span>
           <div class="sort-options">
@@ -80,7 +80,24 @@
     </div>
 
     <section class="tag-bar">
-      </section>
+      <div class="tag-header">
+        <button class="refresh-btn" @click="selectTag('전체')" title="필터 초기화">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+      </div>
+
+      <div class="tag-list">
+        <button 
+          v-for="tag in regionTags" 
+          :key="tag" 
+          class="tag-btn"
+          :class="{ active: selectedTag === tag }"
+          @click="selectTag(tag)"
+        >
+          #{{ tag }}
+        </button>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -95,21 +112,24 @@ const currentPage = ref(1)
 const currentCategoryId = ref(null)
 const currentSort = ref('-created_at')
 
-const totalPages = computed(() => {
-  return Math.ceil(store.totalCount / 10);
-})
+const regionTags = [
+  '전체', '서울', '인천', '대전', 
+  '대구', '광주', '부산', '울산', 
+  '세종', '경기', '강원', '충북', 
+  '충남', '경북', '경남', '전북', 
+  '전남', '제주'
+];
+const selectedTag = ref('전체');
+
+const totalPages = computed(() => Math.ceil(store.totalCount / 10));
 
 const visiblePages = computed(() => {
   const pageLimit = 5;
   const currentGroup = Math.ceil(currentPage.value / pageLimit);
-  
   const start = (currentGroup - 1) * pageLimit + 1;
   const end = Math.min(start + pageLimit - 1, totalPages.value);
-  
   const pages = [];
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
+  for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 })
 
@@ -123,17 +143,30 @@ const loadData = async (page) => {
     }
 
     if (currentCategoryId.value) {
-      await store.getTrips({ 
-        category: currentCategoryId.value, 
+      const params = {
+        category: currentCategoryId.value,
         page: page,
         ordering: currentSort.value
-      });
+      };
+
+      if (selectedTag.value !== '전체') {
+        params.area = selectedTag.value;
+      }
+
+      await store.getTrips(params);
     }
   } catch (e) {
     console.error(e);
   } finally {
     isLoading.value = false;
   }
+};
+
+const selectTag = (tag) => {
+  if (selectedTag.value === tag) return;
+  selectedTag.value = tag;
+  currentPage.value = 1;
+  loadData(1);
 };
 
 const changeSort = (sortType) => {
@@ -172,9 +205,47 @@ onMounted(() => {
 }
 
 .tag-bar { 
-  flex: 1; 
-  background-color: #f9f9f9; 
-  height: 500px; 
+  flex: 1;
+  min-width: 200px;
+}
+
+.tag-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.refresh-btn {
+  background: none; border: none; cursor: pointer; color: #333;
+  transition: transform 0.3s;
+}
+.refresh-btn:hover { transform: rotate(180deg); }
+
+.tag-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.tag-btn {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.tag-btn.active {
+  background-color: #333;
+  color: white;
 }
 
 .list-header { 

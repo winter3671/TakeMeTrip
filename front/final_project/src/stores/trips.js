@@ -13,7 +13,7 @@ export const useTripStore = defineStore('trip', () => {
     try {
       const res = await axios.get(API_URL, { params })
       trips.value = res.data.results ? res.data.results : res.data
-      if (res.data.count) {
+      if (res.data.count !== undefined) {
         totalCount.value = res.data.count
       }
 
