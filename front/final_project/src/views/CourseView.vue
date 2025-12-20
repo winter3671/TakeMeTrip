@@ -3,26 +3,14 @@
     <div class="course-section">
       
       <div class="list-header">
-        <h2 class="header-title">#전체</h2>
+        <h2 class="header-title">#여행코스</h2>
         <div class="header-utils">
           <span class="total-count">총 {{ store.totalCount }} 건</span>
-          
           <div class="sort-options">
-            <span 
-              :class="{ active: currentSort === '-created_at' }"
-              @click="changeSort('-created_at')"
-            >
-              최신순
-            </span> 
+            <span :class="{ active: currentSort === '-created_at' }" @click="changeSort('-created_at')">최신순</span> 
             | 
-            <span 
-              :class="{ active: currentSort === '-recommendation_score' }"
-              @click="changeSort('-recommendation_score')"
-            >
-              인기순
-            </span>
+            <span :class="{ active: currentSort === '-recommendation_score' }" @click="changeSort('-recommendation_score')">인기순</span>
           </div>
-
         </div>
       </div>
       <hr class="header-line" />
@@ -43,10 +31,26 @@
         </div>
       </div>
 
-      <div class="pagination" v-if="totalPages > 1">
-        <button class="page-btn prev" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">&lt;</button>
+      <div class="pagination" v-if="totalPages > 0">
+        
         <button 
-          v-for="page in totalPages" 
+          class="page-btn move" 
+          :disabled="currentPage === 1" 
+          @click="changePage(1)"
+        >
+          &lt;&lt;
+        </button>
+
+        <button 
+          class="page-btn move" 
+          :disabled="currentPage === 1" 
+          @click="changePage(currentPage - 1)"
+        >
+          &lt;
+        </button>
+
+        <button 
+          v-for="page in visiblePages" 
           :key="page" 
           class="page-btn number"
           :class="{ active: currentPage === page }"
@@ -54,7 +58,23 @@
         >
           {{ page }}
         </button>
-        <button class="page-btn next" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">&gt;</button>
+
+        <button 
+          class="page-btn move" 
+          :disabled="currentPage === totalPages" 
+          @click="changePage(currentPage + 1)"
+        >
+          &gt;
+        </button>
+
+        <button 
+          class="page-btn move" 
+          :disabled="currentPage === totalPages" 
+          @click="changePage(totalPages)"
+        >
+          &gt;&gt;
+        </button>
+
       </div>
 
     </div>
@@ -73,11 +93,24 @@ const store = useTripStore()
 const isLoading = ref(false)
 const currentPage = ref(1)
 const currentCategoryId = ref(null)
-
 const currentSort = ref('-created_at')
 
 const totalPages = computed(() => {
   return Math.ceil(store.totalCount / 10);
+})
+
+const visiblePages = computed(() => {
+  const pageLimit = 5;
+  const currentGroup = Math.ceil(currentPage.value / pageLimit);
+  
+  const start = (currentGroup - 1) * pageLimit + 1;
+  const end = Math.min(start + pageLimit - 1, totalPages.value);
+  
+  const pages = [];
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  return pages;
 })
 
 const loadData = async (page) => {
@@ -105,9 +138,8 @@ const loadData = async (page) => {
 
 const changeSort = (sortType) => {
   if (currentSort.value === sortType) return;
-  
   currentSort.value = sortType;
-  currentPage.value = 1;
+  currentPage.value = 1; 
   loadData(1);
 };
 
