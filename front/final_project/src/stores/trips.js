@@ -5,16 +5,19 @@ import { defineStore } from 'pinia'
 export const useTripStore = defineStore('trip', () => {
   const trips = ref([])
   const categories = ref([])
+  const totalCount = ref(0)
 
   const API_URL = 'http://127.0.0.1:8000/api/trips/'
 
   const getTrips = async (params = {}) => {
     try {
       const res = await axios.get(API_URL, { params })
-      if (Object.keys(params).length === 0) {
-        trips.value = res.data.results ? res.data.results : res.data
+      trips.value = res.data.results ? res.data.results : res.data
+      if (res.data.count) {
+        totalCount.value = res.data.count
       }
-      return res.data.results ? res.data.results : res.data
+
+      return trips.value
     } catch (error) {
       console.error('여행지 목록 로드 실패:', error)
       return []
@@ -37,6 +40,7 @@ export const useTripStore = defineStore('trip', () => {
   return {
     trips,
     categories,
+    totalCount,
     getTrips,
     getCategories
   }

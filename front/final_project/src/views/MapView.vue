@@ -306,7 +306,7 @@ const moveToPlace = (place) => {
 </script>
 
 <style>
-body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%;}
 .user-location-dot { width: 16px; height: 16px; background: #4285F4; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 </style>
 
