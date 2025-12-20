@@ -8,7 +8,7 @@
 
 <script setup>
 import { RouterView, RouterLink } from 'vue-router'
-import navbar from '@/component/navbar.vue'
+import navbar from '@/components/navbar.vue'
 </script>
 
 <style scoped>
