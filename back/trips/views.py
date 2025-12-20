@@ -15,25 +15,36 @@ class TripListView(ListAPIView):
     serializer_class = TripListSerializer
     
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'overview', 'road_address']
+    search_fields = ['title', 'overview', 'destination']
     ordering_fields = ['recommendation_score', 'created_at']
 
     def get_queryset(self):
+        # 1. 기본 쿼리셋 (활성 상태인 것만)
         queryset = Trip.objects.filter(status='active')
 
+        # 2. 파라미터 받기
         area_name = self.request.query_params.get('area', None)
         category_id = self.request.query_params.get('category', None)
-        if area_name:
+        
+        # 3. 지역(area) 필터링
+        if area_name and area_name != '전체':
             queryset = queryset.filter(
                 Q(destination__contains=area_name) | 
                 Q(city__name__contains=area_name) |
                 Q(region__name__contains=area_name)
-            )
+            ).distinct()
 
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        return queryset.order_by('-recommendation_score')
+        # 5. 정렬 처리 (기본값 설정)
+        ordering = self.request.query_params.get('ordering', None)
+        if ordering:
+            queryset = queryset.order_by(ordering)
+        else:
+            queryset = queryset.order_by('-recommendation_score')
+
+        return queryset
 
 # 2. 여행지 상세 조회
 class TripDetailView(generics.RetrieveAPIView):

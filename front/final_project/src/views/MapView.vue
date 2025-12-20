@@ -10,7 +10,7 @@
 
         <div class="category-box">
           <ul class="category-list">
-            <li v-for="item in categories" :key="item.id">
+            <li v-for="item in localCategories" :key="item.id">
               <button 
                 class="category-btn" 
                 :class="{ 'active': selectedCategory === item.id }"
@@ -85,7 +85,10 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import axios from 'axios';
+// ★ Axios 제거하고 Pinia Store Import
+import { useTripStore } from '@/stores/trips';
+
+const tripStore = useTripStore();
 
 let map = null;
 let currentOverlay = null;
@@ -94,7 +97,7 @@ let markers = [];
 
 const currentAddress = ref('');
 const currentRegionName = ref(''); 
-const categories = ref([]);
+const localCategories = ref([]); // Store 데이터를 받아와서 아이콘을 입힐 로컬 변수
 const places = ref([]);
 const showSearchBtn = ref(false);
 const selectedCategory = ref(null);
@@ -125,10 +128,14 @@ const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
 };
 
+// ★ Store Action 사용: 카테고리 데이터
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/categories/');
-    categories.value = response.data.map(item => ({
+    // axios 대신 store의 getCategories 사용
+    const data = await tripStore.getCategories();
+    
+    // 아이콘 매핑
+    localCategories.value = data.map(item => ({
       id: item.id,
       name: item.name,
       icon: iconMap[item.name] || '📍'
@@ -138,6 +145,7 @@ const fetchCategories = async () => {
   }
 };
 
+// ★ Store Action 사용: 장소(여행지) 데이터
 const fetchPlaces = async () => {
   if (!currentRegionName.value) return;
 
@@ -152,12 +160,9 @@ const fetchPlaces = async () => {
       params.category = selectedCategory.value;
     }
 
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/', { params });
-    if (response.data.results) {
-      places.value = response.data.results;
-    } else {
-      places.value = response.data;
-    }
+    // axios 대신 store의 getTrips 사용
+    const data = await tripStore.getTrips(params);
+    places.value = data;
 
     updateMarkers();
     
@@ -301,7 +306,7 @@ const moveToPlace = (place) => {
 </script>
 
 <style>
-body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+body, html { margin: 0; padding: 0; width: 100%; height: 100%;}
 .user-location-dot { width: 16px; height: 16px; background: #4285F4; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 </style>
 

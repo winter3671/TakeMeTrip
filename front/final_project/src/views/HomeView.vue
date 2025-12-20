@@ -16,7 +16,9 @@
                 @click="goToDetail(trip.id)"
               >
                 <img :src="trip.thumbnail_image" :alt="trip.title" />
-                <div class="slide-info"></div>
+                <div class="slide-info">
+                  <span>{{ trip.title }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -28,9 +30,9 @@
 
     <div class="categories_recommend">
       <h2 class="section-title">카테고리</h2>
-      <div v-if="categories.length === 0" class="loading-text">로딩 중...</div>
+      <div v-if="localCategories.length === 0" class="loading-text">로딩 중...</div>
       <div v-else class="category-list">
-        <div v-for="item in categories" :key="item.id" class="category-item">
+        <div v-for="item in localCategories" :key="item.id" class="category-item">
           <button 
             class="category-circle" 
             :class="{ 'active': selectedCategory === item.id }"
@@ -91,19 +93,23 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { useTripStore } from '@/stores/trips';
+import { storeToRefs } from 'pinia';
+
 import banner1 from '@/assets/banner1.png';
 import banner2 from '@/assets/banner2.png';
 import banner3 from '@/assets/banner3.png';
 
+const tripStore = useTripStore();
+const { categories } = storeToRefs(tripStore);
+
 const router = useRouter();
-const categories = ref([]);
+const localCategories = ref([]);
 const tabData = ref([]);
 const currentTab = ref('recommend');
 const bannerTrips = ref([]);
 const currentIndex = ref(0);
-
 const selectedCategory = ref(null);
 
 const infoBanners = ref([ { img: banner1 }, { img: banner2 }, { img: banner3 } ]);
@@ -114,20 +120,17 @@ const nextSlide = () => { if (currentIndex.value < bannerTrips.value.length - 3)
 const isEnd = computed(() => currentIndex.value >= bannerTrips.value.length - 3);
 
 const fetchBannerTrips = async () => {
-  try {
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/'); 
-    let allTrips = response.data.results ? response.data.results : response.data;
-    bannerTrips.value = allTrips.slice(0, 10);
-  } catch (e) { console.error(e); }
+  const data = await tripStore.getTrips();
+  bannerTrips.value = data.slice(0, 10);
 };
 
 const fetchCategories = async () => {
-  try {
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/categories/');
-    categories.value = response.data.map(item => ({
-      id: item.id, name: item.name, icon: iconMap[item.name] || '📍'
-    }));
-  } catch (e) { console.error(e); }
+  const data = await tripStore.getCategories();
+  localCategories.value = data.map(item => ({
+    id: item.id, 
+    name: item.name, 
+    icon: iconMap[item.name] || '📍'
+  }));
 };
 
 const selectCategory = (categoryId) => {
@@ -136,7 +139,6 @@ const selectCategory = (categoryId) => {
   } else {
     selectedCategory.value = categoryId;
   }
-  
   switchTab('recommend');
 };
 
@@ -144,29 +146,21 @@ const switchTab = async (tabName) => {
   currentTab.value = tabName;
   tabData.value = [];
 
-  try {
-    let url = 'http://127.0.0.1:8000/api/trips/';
-    let params = {};
+  let params = {};
 
-    if (tabName === 'recommend') {
-      params = { sort: 'recommendation_score' };
-      
-      if (selectedCategory.value) {
-        params.category = selectedCategory.value;
-      }
-      
-    } else if (tabName === 'ai') {
-      params = { sort: 'latest' };
-    } else if (tabName === 'wishlist') {
-      params = {}; 
+  if (tabName === 'recommend') {
+    params = { sort: 'recommendation_score' };
+    if (selectedCategory.value) {
+      params.category = selectedCategory.value;
     }
-
-    const response = await axios.get(url, { params });
-    tabData.value = response.data.results ? response.data.results : response.data;
-    
-  } catch (e) {
-    console.error("탭 데이터 로드 실패", e);
+  } else if (tabName === 'ai') {
+    params = { sort: 'latest' };
+  } else if (tabName === 'wishlist') {
+    params = {}; 
   }
+
+  const data = await tripStore.getTrips(params);
+  tabData.value = data;
 };
 
 const goToDetail = (id) => { console.log(id); };
