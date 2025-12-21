@@ -28,7 +28,8 @@
           <LocationCard 
             v-for="trip in store.trips" 
             :key="trip.id" 
-            :trip="trip" 
+            :trip="trip"
+            :userLocation="userLocation"
           />
         </div>
       </div>
