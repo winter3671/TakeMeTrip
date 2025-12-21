@@ -1,5 +1,5 @@
 <template>
-  <navbar />
+  <navbar v-if="!route.meta.hideNavbar"/>
   <div>
     
   </div>
@@ -7,8 +7,10 @@
 </template>
 
 <script setup>
-import { RouterView, RouterLink } from 'vue-router'
+import { RouterView, RouterLink, useRoute } from 'vue-router'
 import navbar from '@/components/navbar.vue'
+
+const route = useRoute()
 </script>
 
 <style scoped>
