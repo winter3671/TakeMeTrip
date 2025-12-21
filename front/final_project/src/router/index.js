@@ -3,6 +3,7 @@ import CourseView from '@/views/CourseView.vue'
 import HomeView from '@/views/HomeView.vue'
 import InformationView from '@/views/InformationView.vue'
 import LocationView from '@/views/LocationView.vue'
+import LoginView from '@/views/LoginView.vue'
 import MapView from '@/views/MapView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -45,6 +46,11 @@ const router = createRouter({
       name: 'profile',
       component: ProfileView
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView
+    }
   ],
 })
 
