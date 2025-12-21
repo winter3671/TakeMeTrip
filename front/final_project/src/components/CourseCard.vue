@@ -1,7 +1,7 @@
 <template>
   <div class="course-card">
     <div class="card-thumb">
-      <img :src="trip.thumbnail_image" :alt="trip.title" />
+      <img :src="trip.thumbnail_image || '/src/assets/no_image.png'" :alt="trip.title" />
     </div>
 
     <div class="card-info">
