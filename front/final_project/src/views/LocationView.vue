@@ -84,7 +84,7 @@
 
     <section class="tag-bar">
       <div class="tag-header">
-        <button class="refresh-btn" @click="selectTag('전체')" title="필터 초기화">
+        <button class="refresh-btn" @click="resetFilters" title="필터 초기화">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
         </button>
       </div>
@@ -106,6 +106,8 @@
         v-for="tag in categoryTags"
         :key="tag"
         class="tag-btn"
+        :class="{ active: selectedCategoryTag === tag }"
+        @click="selectCategoryTag(tag)"
       >
         #{{ tag }}
         </button>
@@ -141,6 +143,7 @@ const categoryTags = [
 ]
 
 const selectedTag = ref('전체');
+const selectedCategoryTag = ref(null)
 
 const totalPages = computed(() => Math.ceil(store.totalCount / 10));
 
@@ -172,32 +175,45 @@ const getUserLocation = () => {
 const loadData = async (page) => {
   isLoading.value = true;
   try {
-    if (!currentCategoryId.value) {
+    const params = {
+      page: page,
+      ordering: currentSort.value
+    };
+
+    // 1. 지역 필터
+    if (selectedTag.value !== '전체') {
+      params.area = selectedTag.value;
+    }
+
+    // 2. 카테고리 필터
+    if (selectedCategoryTag.value) {
       const categories = await store.getCategories();
-      const target = categories.find(c => c.name === '여행코스');
-      if (target) currentCategoryId.value = target.id;
+      const target = categories.find(c => c.name === selectedCategoryTag.value);
+      
+      if (target) {
+        params.category = target.id;
+      } else {
+        store.trips = []; 
+        store.totalCount = 0;
+        isLoading.value = false;
+        return; // 여기서 함수 강제 종료 (API 요청 안 보냄)
+      }
     }
 
-    if (currentCategoryId.value) {
-      const params = {
-        category: currentCategoryId.value,
-        page: page,
-        ordering: currentSort.value
-      };
-
-      if (selectedTag.value !== '전체') {
-        params.area = selectedTag.value;
-      }
-
-      if (currentSort.value === 'distance' && userLocation.value) {
-        params.lat = userLocation.value.lat;
-        params.lon = userLocation.value.lon;
-      }
-
-      await store.getTrips(params);
+    // 3. 거리순 정렬 시 좌표 추가
+    if (!params.ordering || (params.ordering === 'distance' && !userLocation.value)) {
+         params.ordering = '-created_at';
     }
+
+    if (params.ordering === 'distance' && userLocation.value) {
+      params.lat = userLocation.value.lat;
+      params.lon = userLocation.value.lon;
+    }
+    await store.getTrips(params);
   } catch (e) {
     console.error(e);
+    store.trips = [];
+    store.totalCount = 0;
   } finally {
     isLoading.value = false;
   }
@@ -206,6 +222,17 @@ const loadData = async (page) => {
 const selectTag = (tag) => {
   if (selectedTag.value === tag) return;
   selectedTag.value = tag;
+  currentPage.value = 1;
+  loadData(1);
+};
+
+const selectCategoryTag = (tagName) => {
+  if (selectedCategoryTag.value === tagName) {
+    selectedCategoryTag.value = null;
+  } else {
+    selectedCategoryTag.value = tagName;
+  }
+  
   currentPage.value = 1;
   loadData(1);
 };
@@ -230,6 +257,13 @@ const changePage = (page) => {
   loadData(page);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+const resetFilters = () => {
+  selectedTag.value = '전체';
+  selectedCategoryTag.value = null;
+  currentPage.value = 1;
+  loadData(1);
+}
 
 onMounted(() => {
   getUserLocation();
