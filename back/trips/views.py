@@ -90,7 +90,7 @@ class TripLikeView(APIView):
         else:
             return Response({'status': 'liked', 'is_liked': True}, status=status.HTTP_201_CREATED)
 
-# 4. 내 찜 목록 보기 (마이페이지)
+# 4. 내 찜 목록 보기 
 class MyWishlistView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TripListSerializer
@@ -99,9 +99,35 @@ class MyWishlistView(ListAPIView):
         user = self.request.user
         return Trip.objects.filter(wishlists__user=user).order_by('-wishlists__created_at')
 
-# 5. 카테고리 목록 (동료 작업분 반영)
+# 5. 카테고리 목록 
 @api_view(['GET'])
 def category_list(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
+
+# 카테고리별 랜덤 추천 API
+class RandomTripView(APIView):
+    def get(self, request):
+        # 1. 카테고리 ID 받기
+        category_id = request.query_params.get('category')
+        
+        # 2. 몇 개 뽑을지 받기 (기본값 4개 - 화면 디자인에 맞춤)
+        try:
+            count = int(request.query_params.get('count', 4))
+        except ValueError:
+            count = 4
+        
+        # 3. 데이터 가져오기 (활성 상태인 것만)
+        queryset = Trip.objects.filter(status='active')
+        
+        # 4. 카테고리 필터링 (선택했을 경우만)
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+            
+        # 5. 랜덤 정렬 후 자르기
+        random_trips = queryset.order_by('?')[:count]
+        
+        # 6. 직렬화 (request를 넘겨줘야 'is_liked' 하트 여부를 알 수 있음)
+        serializer = TripListSerializer(random_trips, many=True, context={'request': request})
+        return Response(serializer.data)
