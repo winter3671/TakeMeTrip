@@ -138,27 +138,44 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
 # 내 위치 중심 주변 여행지 추천
 class NearbyTripView(generics.ListAPIView):
     serializer_class = TripListSerializer
-    pagination_class = None
+    pagination_class = None 
 
     def get_queryset(self):
+        lat = self.request.query_params.get('lat')
+        lon = self.request.query_params.get('lon')
+        trip_id = self.request.query_params.get('trip_id')
+        
+        exclude_id = self.request.query_params.get('exclude_id')
+
+        if trip_id:
+            try:
+                base_trip = Trip.objects.get(id=trip_id)
+                lat = base_trip.mapy
+                lon = base_trip.mapx
+                exclude_id = base_trip.id # 자동으로 자기 자신 제외
+            except Trip.DoesNotExist:
+                return Trip.objects.none()
+
+        if not lat or not lon:
+            return Trip.objects.none()
+            
         try:
-            lat = float(self.request.query_params.get('lat', 0))
-            lon = float(self.request.query_params.get('lon', 0))
-            exclude_id = self.request.query_params.get('exclude_id', None)
-        except (ValueError, TypeError):
+            lat = float(lat)
+            lon = float(lon)
+        except ValueError:
             return Trip.objects.none()
 
         queryset = Trip.objects.filter(status='active')
 
         if exclude_id:
             queryset = queryset.exclude(id=exclude_id)
-            
+
+        # 거리 계산 및 정렬
         queryset = queryset.annotate(
             distance_diff=ExpressionWrapper(
                 (F('mapy') - lat) ** 2 + (F('mapx') - lon) ** 2,
                 output_field=FloatField()
             )
-        ).order_by('distance_diff') 
+        ).order_by('distance_diff')
 
-        # 가장 가까운 10개만 자르기(추후 AI 추천도로 변경 예정)
         return queryset[:10]
