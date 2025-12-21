@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import api_view
-from django.db.models import Q
+from django.db.models import Q, F, FloatField, ExpressionWrapper
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Trip, Wishlist, Category
@@ -25,6 +25,10 @@ class TripListView(ListAPIView):
         # 2. 파라미터 받기
         area_name = self.request.query_params.get('area', None)
         category_id = self.request.query_params.get('category', None)
+        ordering_param = self.request.query_params.get('ordering', None)
+
+        lat = self.request.query_params.get('lat', None)
+        lon = self.request.query_params.get('lon', None)
         
         # 3. 지역(area) 필터링
         if area_name and area_name != '전체':
@@ -38,10 +42,29 @@ class TripListView(ListAPIView):
             queryset = queryset.filter(category_id=category_id)
 
         # 5. 정렬 처리 (기본값 설정)
-        ordering = self.request.query_params.get('ordering', None)
-        if ordering:
-            queryset = queryset.order_by(ordering)
+        if ordering_param == 'distance' and lat and lon:
+            try:
+                # 좌표를 실수형으로 변환
+                current_lat = float(lat)
+                current_lon = float(lon)
+                
+                # 유클리드 거리 근사 계산: (x1-x2)^2 + (y1-y2)^2
+                # DB 내에서 계산하여 'distance_diff'라는 임시 필드를 만들고 그걸로 정렬
+                queryset = queryset.annotate(
+                    distance_diff=ExpressionWrapper(
+                        (F('mapy') - current_lat) ** 2 + (F('mapx') - current_lon) ** 2,
+                        output_field=FloatField()
+                    )
+                ).order_by('distance_diff')
+            except ValueError:
+                # 좌표값이 숫자가 아닐 경우 최신순으로 대체
+                queryset = queryset.order_by('-created_at')
+
+        elif ordering_param:
+            # 그 외 정렬 (최신순, 인기순 등)
+            queryset = queryset.order_by(ordering_param)
         else:
+            # 기본값: 인기순 (또는 최신순)
             queryset = queryset.order_by('-recommendation_score')
 
         return queryset
