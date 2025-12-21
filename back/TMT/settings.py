@@ -9,6 +9,10 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from pathlib import Path
 
@@ -199,6 +203,10 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['profile', 'email'],
     },
     'kakao': {
-        'KEY': 'pixel_ratio',
-    },
+        'APP': {
+            'client_id': os.getenv('KAKAO_CLIENT_ID'),
+            'secret': os.getenv('KAKAO_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    }
 }
