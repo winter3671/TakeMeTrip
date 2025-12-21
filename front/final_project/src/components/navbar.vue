@@ -120,8 +120,13 @@ const gotoMap = () => {
 }
 
 const gotoProfile = () => {
-  router.push({ name: 'profile' })
-  closeMenu()
+  const isLoggedIn = !!localStorage.getItem('access_token');
+
+  if (isLoggedIn) {
+    router.push({ name: 'profile' });
+  } else {
+    router.push({ name : 'login'});
+  }
 }
 
 </script>
