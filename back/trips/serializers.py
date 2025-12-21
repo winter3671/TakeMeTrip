@@ -25,6 +25,8 @@ class TripListSerializer(serializers.ModelSerializer):
             'mapx', 
             'mapy',
             'is_liked',
+            'start_date',
+            'end_date'
         ]
 
     def get_is_liked(self, obj):
