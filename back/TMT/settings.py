@@ -181,17 +181,19 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'tmt-refresh-token',
     'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'SESSION_LOGIN': False,
 }
 
 SITE_ID = 1
 
-ACCOUNT_LOGIN_METHODS = {'email'} 
-ACCOUNT_SIGNUP_FIELDS = [
-    'email', 
-]
-ACCOUNT_USERNAME_REQUIRED = False 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'email' 
+ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_USERNAME_REQUIRED = False
+
+ACCOUNT_EMAIL_VERIFICATION = 'none' 
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
