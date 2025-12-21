@@ -35,7 +35,7 @@
           <span class="btn-text">Google로 시작하기</span>
         </button>
 
-        <button class="social-btn kakao">
+        <button type="button" class="social-btn kakao" @click="kakaoLogin">
           <div class="icon-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="social-icon-svg">
               <path fill="#3C1E1E" d="M12 3C5.9 3 1 6.9 1 11.8c0 3.2 2.1 6 5.4 7.6-.2.8-.8 2.8-.9 3.2 0 .3.2.5.4.5.1 0 .2 0 .3-.1 2.9-2 4.2-3.2 4.3-3.2 0 0 .2 0 .3 0 .5 0 1 0 1.5-.1 6.1 0 11-3.9 11-8.7C23 6.9 18.1 3 12 3z"/>
@@ -59,16 +59,49 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 import { useTripStore } from '@/stores/trips';
 
 const store = useTripStore();
+const router = useRouter();
 const username = ref('');
 const password = ref('');
 
-const handleLogin = () => {
-  console.log('Login attempt:', username.value, password.value);
+const kakaoLogin = () => {
+  // 1. SDK 초기화 체크
+  if (!window.Kakao.isInitialized()) {
+    window.Kakao.init('여기에_본인의_JavaScript_키'); 
+  }
+
+  // 2. 리다이렉트 방식 로그인 (authorize 사용)
+  window.Kakao.Auth.authorize({
+    redirectUri: 'http://localhost:5173/login', // 로그인 후 다시 돌아올 주소
+  });
 };
+
+const sendTokenToBackend = async (accessToken) => {
+  try {
+    const response = await axios.post('http://127.0.0.1:8000/users/kakao/login/', {
+      access_token: accessToken,
+    });
+    console.log('서버 로그인 성공:', response.data);
+    localStorage.setItem('accessToken', response.data.key || response.data.access);
+    alert('로그인 성공!');
+    router.push('/'); 
+  } catch (error) {
+    console.error('서버 에러:', error);
+    alert('서버 로그인 실패');
+  }
+};
+
+// onMounted에서는 초기화만 시도 (필수 아님, 위에서 버튼 클릭 시 체크하므로 안전함)
+onMounted(() => {
+  if (window.Kakao && !window.Kakao.isInitialized()) {
+    window.Kakao.init('자바 스크립트 키');
+  }
+});
 </script>
 
 <style scoped>
