@@ -24,6 +24,7 @@
         </div>
 
         <div class="place-list-box">
+          <div class="place-list-wrap">
           <div v-if="isLoading" class="status-msg">
             데이터를 불러오는 중...
           </div>
@@ -50,12 +51,56 @@
               </div>
             </li>
           </ul>
-
+          
           <div v-else class="status-msg empty">
             <span class="empty-icon">😢</span>
             <p>이 주변에는 여행지가 없네요.</p>
           </div>
-        </div>
+          </div>
+          <div class="pagination" v-if="places.length > 0 && totalPages > 1">
+            <button 
+              class="page-btn move" 
+              :disabled="currentPage === 1" 
+              @click="changePage(1)"
+            >
+              &lt;&lt;
+            </button>
+
+            <button 
+              class="page-btn move" 
+              :disabled="currentPage === 1" 
+              @click="changePage(currentPage - 1)"
+            >
+              &lt;
+            </button>
+
+            <button 
+              v-for="page in visiblePages" 
+              :key="page" 
+              class="page-btn number"
+              :class="{ active: currentPage === page }"
+              @click="changePage(page)"
+            >
+              {{ page }}
+            </button>
+
+            <button 
+              class="page-btn move" 
+              :disabled="currentPage === totalPages" 
+              @click="changePage(currentPage + 1)"
+            >
+              &gt;
+            </button>
+
+            <button 
+              class="page-btn move" 
+              :disabled="currentPage === totalPages" 
+              @click="changePage(totalPages)"
+            >
+              &gt;&gt;
+            </button>
+          </div>
+          </div>
       </div>
 
       <button class="sidebar-toggle-btn" @click="toggleSidebar" title="사이드바 토글">
@@ -84,7 +129,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useTripStore } from '@/stores/trips';
 
 const tripStore = useTripStore();
@@ -105,6 +150,9 @@ const myLocation = ref(null);
 
 const isSidebarOpen = ref(true);
 
+const currentPage = ref(1);
+const totalCount = ref(0);
+
 const iconMap = {
   '관광지': '🚗', '문화시설': '🏛️', '축제/공연': '🎉',
   '여행코스': '🗺️', '레포츠': '⚽', '숙박': '🏠',
@@ -123,6 +171,27 @@ onMounted(async () => {
   }
 });
 
+const totalPages = computed(() => Math.ceil(tripStore.totalCount / 10));
+
+const visiblePages = computed(() => {
+  const pageLimit = 5;
+  const currentGroup = Math.ceil(currentPage.value / pageLimit);
+  const start = (currentGroup - 1) * pageLimit + 1;
+  const end = Math.min(start + pageLimit - 1, totalPages.value);
+  const pages = [];
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
+
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchPlaces();
+  
+  const listBox = document.querySelector('.place-list-wrap');
+  if(listBox) listBox.scrollTop = 0;
+};
+
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value;
 };
@@ -130,7 +199,6 @@ const toggleSidebar = () => {
 const fetchCategories = async () => {
   try {
     const data = await tripStore.getCategories();
-
     localCategories.value = data.map(item => ({
       id: item.id,
       name: item.name,
@@ -149,14 +217,16 @@ const fetchPlaces = async () => {
 
   try {
     const params = {
-      area: currentRegionName.value
+      area: currentRegionName.value,
+      page: currentPage.value, 
     };
+    
     if (selectedCategory.value) {
       params.category = selectedCategory.value;
     }
 
-    const data = await tripStore.getTrips(params);
-    places.value = data;
+    await tripStore.getTrips(params);
+    places.value = tripStore.trips;
 
     updateMarkers();
     
@@ -203,6 +273,7 @@ const selectCategory = (categoryId) => {
   } else {
     selectedCategory.value = categoryId;
   }
+  currentPage.value = 1;
   fetchPlaces();
 };
 
@@ -269,6 +340,7 @@ const searchAddrFromCoords = (lng, lat) => {
         if (currentRegionName.value !== newRegionName) {
            currentRegionName.value = newRegionName;
            selectedCategory.value = null; 
+           currentPage.value = 1;
            fetchPlaces();
         }
       }
@@ -432,7 +504,12 @@ body, html {
 .place-list-box { 
   flex: 1; 
   overflow-y: auto; 
-  background-color: #fff; 
+  background-color: #fff;
+}
+
+.place-list-wrap {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .place-list { 
@@ -571,4 +648,48 @@ body, html {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 15px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.page-btn {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #666;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+  padding: 0 6px;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: #4285F4;
+  color: #4285F4;
+}
+
+.page-btn.active {
+  background-color: #4285F4;
+  color: white;
+  border-color: #4285F4;
+  font-weight: bold;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f9f9f9;
+}
 </style>
