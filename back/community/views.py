@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework import status
 from django.shortcuts import get_object_or_404, get_list_or_404
+from django.db.models import Q
 from .models import Article, Comment
 from .serializers import ArticleListSerializer, ArticleDetailSerializer, CommentSerializer
 
@@ -12,6 +13,15 @@ from .serializers import ArticleListSerializer, ArticleDetailSerializer, Comment
 def article_list(request):
     if request.method == 'GET':
         articles = Article.objects.all().order_by('-created_at')
+
+        search_query = request.GET.get('search')
+        if search_query:
+            # 제목 또는 내용에 검색어가 포함된 것만 필터링
+            # ?search=검색어 로 검색
+            articles = articles.filter(
+                Q(title__icontains=search_query) | Q(content__icontains=search_query)
+            )
+
         serializer = ArticleListSerializer(articles, many=True)
         return Response(serializer.data)
 
