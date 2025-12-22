@@ -1,3 +1,4 @@
+import ArticleDetailView from '@/views/ArticleDetailView.vue'
 import CommunityView from '@/views/CommunityView.vue'
 import CourseView from '@/views/CourseView.vue'
 import HomeView from '@/views/HomeView.vue'
@@ -56,7 +57,13 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: SignUpView, 
-    }
+    },
+    {
+      path: '/community/:id',
+      name: 'article-detail',
+      component: ArticleDetailView
+    },
+
   ],
 })
 
