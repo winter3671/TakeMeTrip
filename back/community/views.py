@@ -38,6 +38,10 @@ def article_detail(request, article_pk):
     article = get_object_or_404(Article, pk=article_pk)
 
     if request.method == 'GET':
+        # 조회수 기능 구현
+        article.hits += 1
+        article.save()
+
         serializer = ArticleDetailSerializer(article)
         return Response(serializer.data)
     
