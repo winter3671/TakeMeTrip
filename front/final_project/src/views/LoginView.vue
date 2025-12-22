@@ -22,7 +22,7 @@
 
       <div class="social-login">
         
-        <button class="social-btn google">
+        <button class="social-btn google" @click="loginWithGoogle">
           <div class="icon-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="social-icon-svg">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
@@ -44,7 +44,7 @@
           <span class="btn-text">카카오로 시작하기</span>
         </button>
 
-        <button class="social-btn naver">
+        <button class="social-btn naver" @click="loginWithNaver">
           <div class="icon-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="social-icon-svg">
               <path fill="#FFFFFF" d="M4 20V4h5.4l6.8 10V4h5.4v16h-5.4l-6.8-10v10H4z"/>
@@ -75,6 +75,10 @@ const password = ref('');
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
 const REST_API_KEY = import.meta.env.VITE_REST_API_KEY
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID
+
+const CALLBACK_URI = 'http://localhost:5173/auth/callback';
 
 const handleLogin = function () {
   if (!username.value || !password.value) {
@@ -150,6 +154,16 @@ const sendTokenToBackend = async (accessToken) => {
     alert('서버 로그인 실패');
   }
 };
+  const loginWithNaver = () => {
+      const state = Math.random().toString(36).substring(7);
+      const url = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&state=${state}&redirect_uri=${CALLBACK_URI}`;
+      window.location.href = url;
+  };
+
+  const loginWithGoogle = () => {
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${CALLBACK_URI}&response_type=code&scope=email profile`;
+      window.location.href = url;
+  };
 </script>
 
 <style scoped>

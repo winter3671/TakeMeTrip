@@ -28,6 +28,7 @@ urlpatterns = [
     path("api/auth/social/", include("users.urls")),
     path("api/community/", include("community.urls")),
     path('api/planner/', include('planner.urls')),
+    path('accounts/', include('allauth.urls')),
 ]
 
 if settings.DEBUG:

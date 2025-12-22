@@ -199,14 +199,34 @@ ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = 'none' 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['profile', 'email'],
-    },
     'kakao': {
         'APP': {
             'client_id': os.getenv('KAKAO_CLIENT_ID'),
             'secret': os.getenv('KAKAO_CLIENT_SECRET', ''),
             'key': ''
         }
+    },
+    'naver': {
+        'APP': {
+            'client_id': os.getenv('NAVER_CLIENT_ID'),
+            'secret': os.getenv('NAVER_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    },
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
     }
 }
+
+SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
