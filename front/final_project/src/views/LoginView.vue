@@ -5,11 +5,11 @@
 
       <form class="login-form" @submit.prevent="handleLogin">
         <div class="input-group">
-          <input type="text" id="username" v-model="username" placeholder="USERNAME">
+          <input type="text" id="username" v-model.trim="username" placeholder="USERNAME">
         </div>
 
         <div class="input-group">
-          <input type="password" id="password" v-model="password" placeholder="PASSWORD">
+          <input type="password" id="password" v-model.trim="password" placeholder="PASSWORD">
         </div>
 
         <button type="submit" class="login-btn">LOGIN</button>
@@ -60,11 +60,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute, RouterLink  } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import { useTripStore } from '@/stores/trips';
+import { useAccountStore } from '@/stores/accounts';
 
-const store = useTripStore();
+const tripStore = useTripStore();
+const accountStore = useAccountStore(); 
 const router = useRouter();
 const route = useRoute();
 
@@ -72,29 +74,37 @@ const username = ref('');
 const password = ref('');
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
-
 const REST_API_KEY = import.meta.env.VITE_REST_API_KEY
 
+const handleLogin = function () {
+  if (!username.value || !password.value) {
+    alert('아이디와 비밀번호를 모두 입력해주세요.');
+    return;
+  }
+
+  const payload = {
+    username: username.value,
+    password: password.value
+  };
+
+  accountStore.logIn(payload);
+};
+
 onMounted(async () => {
-  // 1. SDK 초기화 (init)
   if (window.Kakao && !window.Kakao.isInitialized()) {
     window.Kakao.init(KAKAO_JS_KEY);
   }
-
-  // 2. 로그인 후 돌아왔을 때 주소창에 'code'가 있는지 확인
   if (route.query.code) {
     await getKakaoToken(route.query.code);
   }
 });
 
-// 3. 버튼 클릭 시: 카카오 로그인 페이지로 이동 (authorize 사용)
 const kakaoLogin = () => {
   window.Kakao.Auth.authorize({
     redirectUri: 'http://localhost:5173/login', 
   });
 };
 
-// 4. 인증 코드로 토큰 교환 (REST API 사용)
 const getKakaoToken = async (code) => {
   try {
     const data = new URLSearchParams({
@@ -115,14 +125,10 @@ const getKakaoToken = async (code) => {
     );
 
     const accessToken = response.data.access_token;
-
     await sendTokenToBackend(accessToken);
 
   } catch (error) {
     console.error('토큰 교환 실패:', error);
-    if (error.response) {
-       console.error('응답 데이터:', error.response.data);
-    }
     alert('카카오 로그인 중 오류가 발생했습니다.');
   }
 };
@@ -132,20 +138,18 @@ const sendTokenToBackend = async (accessToken) => {
     const response = await axios.post('http://127.0.0.1:8000/api/auth/social/kakao/login/', {
       access_token: accessToken,
     });
-    
+
     localStorage.setItem('accessToken', response.data.key || response.data.access);
     alert('로그인 되었습니다! 🎉');
     
+    accountStore.token = response.data.key || response.data.access;
+
     router.replace('/'); 
 
   } catch (error) {
     console.error('백엔드 로그인 에러:', error);
     alert('서버 로그인 실패');
   }
-};
-
-const handleLogin = () => {
-  console.log('일반 로그인 시도');
 };
 </script>
 
