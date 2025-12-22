@@ -104,13 +104,13 @@
           🔄 새로고침
         </button>
       </div>
-    </div>
-
-    <div class="bottom-banners">
-      <div v-for="(banner, index) in infoBanners" :key="index" class="banner-item">
-        <img :src="banner.img" alt="정보 배너" />
+      <div class="bottom-banners">
+        <div v-for="(banner, index) in infoBanners" :key="index" class="banner-item">
+          <img :src="banner.img" alt="정보 배너" />
+        </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -118,7 +118,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTripStore } from '@/stores/trips';
-import { useAccountStore } from '@/stores/accounts'; // Login check
+import { useAccountStore } from '@/stores/accounts';
 import { storeToRefs } from 'pinia';
 
 import banner1 from '@/assets/banner1.png';
@@ -263,6 +263,7 @@ onMounted(() => {
 .home-container::-webkit-scrollbar { 
   display: none; 
 }
+
 .home-container { 
   -ms-overflow-style: none; 
   scrollbar-width: none; 
@@ -278,7 +279,6 @@ onMounted(() => {
   background-color: #FFB78B8F; 
   display: flex; 
   justify-content: center; 
-  overflow: visible; 
   position: relative; 
   margin-bottom: 60px; 
 }
@@ -297,14 +297,17 @@ onMounted(() => {
   position: relative;
   bottom: auto;
   width: 100%;
+  max-width: 1060px;
   height: 320px; 
+  margin: 0 auto;
 }
 
 .slider-window { 
-  width: 880px; 
+  width: 100%; 
   height: 100%; 
   overflow: hidden; 
   border-radius: 16px; 
+  position: relative;
 }
 
 .rec-slider-window {
@@ -315,7 +318,8 @@ onMounted(() => {
   display: flex; 
   gap: 20px; 
   transition: transform 0.4s ease-in-out; 
-  height: 100%; 
+  height: 100%;
+  padding-left: 0; 
 }
 
 .slider-card {
@@ -359,39 +363,45 @@ onMounted(() => {
   font-size: 18px; 
 }
 
-.nav-btn { 
-  background-color: white; 
-  border: 1px solid #ddd; 
-  width: 40px; 
-  height: 40px; 
-  border-radius: 50%; 
-  cursor: pointer; 
-  font-size: 20px; 
-  color: #333; 
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-  z-index: 10; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  transition: all 0.2s; 
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-size: 20px;
+  color: #333;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
 }
 
-.nav-btn:hover:not(:disabled) { 
-  background-color: #333; 
-  color: white; 
+.nav-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 1);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
 }
 
-.nav-btn:disabled { 
-  opacity: 0.5; 
-  cursor: not-allowed; 
+.nav-btn:disabled {
+  opacity: 0;
+  cursor: default;
+  pointer-events: none;
 }
 
-.nav-btn.prev { 
-  margin-right: 15px; 
+.nav-btn.prev {
+  left: 15px;
 }
 
-.nav-btn.next { 
-  margin-left: 15px; 
+.nav-btn.next {
+  right: 15px;
 }
 
 .loading-msg { 
