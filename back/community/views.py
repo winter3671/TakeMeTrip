@@ -78,6 +78,17 @@ def comment_create(request, article_pk):
     if serializer.is_valid(raise_exception=True):
         serializer.save(article=article, user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def comment_delete(request, article_pk, comment_pk):
+    comment = get_object_or_404(Comment, pk=comment_pk)
+    
+    if request.user != comment.user:
+        return Response({'message': '권한이 없습니다.'}, status=status.HTTP_403_FORBIDDEN)
+    
+    comment.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 # 좋아요 기능
 @api_view(['POST'])

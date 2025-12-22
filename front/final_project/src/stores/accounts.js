@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router'
 export const useAccountStore = defineStore('account', () => {
     const router = useRouter()
     const token = ref(null)
+    const user = ref(null)
 
     const API_URL = 'http://127.0.0.1:8000'
 
@@ -47,8 +48,32 @@ export const useAccountStore = defineStore('account', () => {
             }
         }).then(res => {
             token.value = res.data.access
+            user.value = {
+                username: username
+            }
             router.push({ name : 'home'})
         }).catch(err => console.log(err))
+    }
+
+    const getUserInfo = function () {
+        if (!token.value) return
+
+        axios({
+            method: 'get',
+            url: `${API_URL}/api/auth/user/`,
+            headers: {
+                Authorization: `Bearer ${token.value}`
+            }
+        }).then(res => {
+            user.value = {
+                username: res.data.username
+            }
+        }).catch(err => {
+            console.log('사용자 정보 로드 실패:', err)
+            if (err.response?.status === 401) {
+                logOut()
+            }
+        })
     }
 
     const isLogin = computed(() => {
@@ -64,9 +89,10 @@ export const useAccountStore = defineStore('account', () => {
     return {
         signUp,
         logIn,
+        getUserInfo,
         isLogin,
         logOut,
-        token
-
+        token,
+        user
     }
 }, { persist: true })

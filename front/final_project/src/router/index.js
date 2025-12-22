@@ -1,3 +1,5 @@
+import ArticleCreateView from '@/views/ArticleCreateView.vue'
+import ArticleDetailView from '@/views/ArticleDetailView.vue'
 import CommunityView from '@/views/CommunityView.vue'
 import CourseView from '@/views/CourseView.vue'
 import HomeView from '@/views/HomeView.vue'
@@ -8,6 +10,7 @@ import MapView from '@/views/MapView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import SignUpView from '@/views/SignUpView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAccountStore } from '@/stores/accounts'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,7 +59,27 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: SignUpView, 
-    }
+    },
+    {
+      path: '/community/:id',
+      name: 'article-detail',
+      component: ArticleDetailView
+    },
+    {
+      path: '/community/create',
+      name: 'article-create',
+      component: ArticleCreateView,
+      beforeEnter: (to, from, next) => {
+          const store = useAccountStore()
+          if (!store.isLogin) {
+              alert('로그인이 필요합니다.')
+              next({ name: 'login' })
+          } else {
+              next()
+          }
+      } 
+    },
+
   ],
 })
 
