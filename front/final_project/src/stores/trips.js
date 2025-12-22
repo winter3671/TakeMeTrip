@@ -33,6 +33,19 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+  const getRandomTrips = async (categoryId = null) => {
+    try {
+      const params = { count: 10 };
+      if (categoryId) params.category = categoryId;
+
+      const res = await axios.get(`${API_URL}random/`, { params });
+      return res.data;
+    } catch (error) {
+      console.error('랜덤 추천 로드 실패:', error);
+      return [];
+    }
+  }
+
   const getCategories = async () => {
     try {
       if (categories.value.length > 0) return categories.value
@@ -46,12 +59,25 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+  const getMyWishlist = async () => {
+    try {
+
+      const res = await axios.get(`${API_URL}my-wishlist/`);
+      return res.data.results ? res.data.results : res.data;
+    } catch (error) {
+      console.error('찜 목록 로드 실패:', error);
+      return [];
+    }
+  }
+
   return {
     trips,
     categories,
     totalCount,
     getTrips,
     getCategories,
-    getRandomBannerTrips
+    getRandomBannerTrips,
+    getRandomTrips,
+    getMyWishlist
   }
 }, { persist: true })

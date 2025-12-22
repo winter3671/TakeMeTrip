@@ -27,6 +27,10 @@
 
         <button type="submit" class="signup-btn">회원가입</button>
       </form>
+      <div class="links">
+          이미 아이디가 있으신가요?
+          <RouterLink class="link-text" :to="{ name : 'login'}">login</RouterLink>
+        </div>
     </div>
   </div>
 </template>
@@ -138,6 +142,18 @@ const handleSignup = () => {
 
 .signup-btn:hover {
   background-color: #16528e;
+}
+
+.links { 
+  display: flex; 
+  justify-content: center; 
+  gap: 20px; 
+  font-size: 14px; 
+}
+
+.link-text { 
+  text-decoration: none; 
+  color: #7d7dff; 
 }
 
 </style>
