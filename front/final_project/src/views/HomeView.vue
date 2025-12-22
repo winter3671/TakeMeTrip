@@ -13,7 +13,6 @@
                 v-for="trip in bannerTrips" 
                 :key="trip.id" 
                 class="slide-item"
-                @click="goToDetail(trip.id)"
               >
                 <img :src="trip.thumbnail_image" :alt="trip.title" />
                 <div class="slide-info">
@@ -54,7 +53,7 @@
         </div>
         <div class="tab-divider">|</div>
         <div class="tab-item" :class="{ active: currentTab === 'ai' }" @click="switchTab('ai')">
-          AI 기반 플래너<div v-if="currentTab === 'ai'" class="triangle"></div>
+          AI 기반 추천 장소<div v-if="currentTab === 'ai'" class="triangle"></div>
         </div>
         <div class="tab-divider">|</div>
         <div class="tab-item" :class="{ active: currentTab === 'wishlist' }" @click="switchTab('wishlist')">
@@ -81,7 +80,6 @@
                 v-for="trip in tabData" 
                 :key="trip.id" 
                 class="card-item slider-card" 
-                @click="goToDetail(trip.id)"
               >
                 <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
                 
@@ -208,8 +206,12 @@ const fetchTabData = async () => {
       tabData.value = data; 
 
     } else if (currentTab.value === 'ai') {
-      const data = await tripStore.getRandomTrips(null);
-      tabData.value = data;
+      if (!accountStore.isLogin) {
+        tabData.value = []; 
+      } else {
+        const data = await tripStore.getAiRecommendations();
+        tabData.value = data;
+      }
 
     } else if (currentTab.value === 'wishlist') {
       if (!accountStore.isLogin) {
@@ -272,10 +274,6 @@ const switchTab = async (tabName) => {
 
 const refreshData = () => {
   fetchTabData();
-};
-
-const goToDetail = (id) => { 
-    router.push({ name: 'detail', params: { id } });
 };
 
 onMounted(() => {
