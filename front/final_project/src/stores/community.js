@@ -106,29 +106,44 @@ export const useCommunityStore = defineStore('community', () => {
   }
 
   const deleteComment = function(articleId, commentId) {
-  if (!confirm('댓글을 삭제하시겠습니까?')) return
+    if (!confirm('댓글을 삭제하시겠습니까?')) return
 
-  axios({
-    method: 'delete',
-    url: `${API_URL}/articles/${articleId}/comments/${commentId}/`,
-    headers: {
-      Authorization: `Bearer ${accountStore.token}`
+    axios({
+      method: 'delete',
+      url: `${API_URL}/articles/${articleId}/comments/${commentId}/`,
+      headers: {
+        Authorization: `Bearer ${accountStore.token}`
+      }
+    })
+    .then(res => {
+      getArticleDetail(articleId)
+    })
+    .catch(err => {
+      
+      if (err.response?.status === 403) {
+        alert('댓글 삭제 권한이 없습니다.')
+      } else if (err.response?.status === 404) {
+        alert('댓글을 찾을 수 없습니다.')
+      } else {
+        alert('댓글 삭제에 실패했습니다.')
+      }
+    })
+  }
+
+  const getMyComments = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/comments/my/`, {
+          headers: {
+            Authorization: `Bearer ${accountStore.token}`
+          }
+        })
+        return res.data
+      } catch (error) {
+        console.error('내 댓글 로드 실패:', error)
+        return []
+      }
     }
-  })
-  .then(res => {
-    getArticleDetail(articleId)
-  })
-  .catch(err => {
-    
-    if (err.response?.status === 403) {
-      alert('댓글 삭제 권한이 없습니다.')
-    } else if (err.response?.status === 404) {
-      alert('댓글을 찾을 수 없습니다.')
-    } else {
-      alert('댓글 삭제에 실패했습니다.')
-    }
-  })
-}
+
 
   return { 
     articles, 
@@ -140,6 +155,7 @@ export const useCommunityStore = defineStore('community', () => {
     createComment,
     likeArticle,
     deleteComment,
+    getMyComments,
     API_URL 
   }
 })

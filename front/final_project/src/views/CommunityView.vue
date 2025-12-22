@@ -43,7 +43,7 @@
 
       <div 
         v-else 
-        v-for="article in articles" 
+        v-for="article in paginatedArticles" 
         :key="article.id" 
         class="article-card"
         @click="goToDetail(article.id)"
@@ -77,11 +77,40 @@
         </div>
       </div>
     </div>
+
+    <div class="pagination" v-if="totalPages > 1">
+      <button 
+        class="page-btn" 
+        :disabled="currentPage === 1" 
+        @click="changePage(currentPage - 1)"
+      >
+        &lt;
+      </button>
+      
+      <button 
+        v-for="page in totalPages" 
+        :key="page" 
+        class="page-btn" 
+        :class="{ active: currentPage === page }"
+        @click="changePage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button 
+        class="page-btn" 
+        :disabled="currentPage === totalPages" 
+        @click="changePage(currentPage + 1)"
+      >
+        &gt;
+      </button>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useAccountStore } from '@/stores/accounts';
@@ -95,31 +124,52 @@ const { articles } = storeToRefs(communityStore);
 const searchKeyword = ref('');
 const searchCondition = ref('title_content');
 
-// 컴포넌트 마운트 시 게시글 목록 로드
+// --- 페이지네이션 관련 로직 시작 ---
+const currentPage = ref(1);
+const itemsPerPage = 10; // 페이지당 10개
+
+// 전체 페이지 수 계산
+const totalPages = computed(() => {
+  return Math.ceil(articles.value.length / itemsPerPage);
+});
+
+// 현재 페이지에 보여줄 데이터만 자르기 (Slice)
+const paginatedArticles = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return articles.value.slice(start, end);
+});
+
+// 페이지 변경 함수
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+    window.scrollTo(0, 0); // 페이지 이동 시 맨 위로 스크롤
+  }
+};
+// --- 페이지네이션 관련 로직 끝 ---
+
 onMounted(() => {
   communityStore.getArticles();
 });
 
-// 검색 핸들러
-const handleSearch = () => {
+const handleSearch = async () => {
   const params = {
     search: searchKeyword.value,
     condition: searchCondition.value
   };
-  communityStore.getArticles(params);
+  await communityStore.getArticles(params);
+  currentPage.value = 1; // 검색 시 1페이지로 초기화
 };
 
-// 게시글 상세 페이지 이동
 const goToDetail = (id) => {
   router.push({ name: 'article-detail', params: { id } });
 };
 
-// 글쓰기 페이지 이동
 const goToCreate = () => {
   router.push({ name: 'article-create' });
 };
 
-// 날짜 포맷팅 함수 (YYYY-MM-DD)
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('ko-KR', {
@@ -330,6 +380,47 @@ const formatDate = (dateString) => {
 .stat-value {
   font-weight: 600;
   color: #333;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.page-btn {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #666;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: #333;
+  color: #333;
+}
+
+.page-btn.active {
+  background-color: #333;
+  color: white;
+  border-color: #333;
+  font-weight: bold;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
