@@ -3,9 +3,12 @@ from rest_framework import generics, status, permissions, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
-from rest_framework.decorators import api_view
-from django.db.models import Q, F, FloatField, ExpressionWrapper
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import Q, F, FloatField, ExpressionWrapper, Count
 from django_filters.rest_framework import DjangoFilterBackend
+from collections import Counter
+import random
 
 from .models import Trip, Wishlist, Category, Course, CoursePlace
 from .serializers import TripListSerializer, TripDetailSerializer, CategorySerializer, CourseSerializer
@@ -194,3 +197,125 @@ class BannerRandomView(APIView):
         # 3. 직렬화 후 반환
         serializer = TripListSerializer(random_trips, many=True, context={'request': request})
         return Response(serializer.data)
+
+# 카테고리 별 추천
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def recommend_by_category(request):
+    # 프론트에서 ?category=12 (관광지) 형태로 보낸다고 가정
+    category_code = request.GET.get('category')
+    
+    if not category_code:
+        return Response({'message': '카테고리를 선택해주세요.'}, status=400)
+
+    # 해당 카테고리의 장소 중 10개를 무작위로 뽑음
+    trips = Trip.objects.filter(category_id=category_code).order_by('?')[:10]
+    
+    serializer = TripListSerializer(trips, many=True, context={'request': request})
+    return Response(serializer.data)
+
+# 2. 내가 찜한 장소 (단순 랜덤)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def recommend_liked_places(request):
+    user = request.user
+    # 유저가 좋아요한 장소들 중 10개를 랜덤으로
+    liked_trips = Trip.objects.filter(wishlists__user=user, status='active').order_by('?')[:10]
+    
+    serializer = TripListSerializer(liked_trips, many=True, context={'request': request})
+    return Response(serializer.data)
+
+# 3. AI 추천 장소 (가중치 알고리즘)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def recommend_by_ai(request):
+    user = request.user
+    
+    # 사용자가 찜한 목록 가져오기 (Wishlist 모델 활용)
+    my_wishlists = Wishlist.objects.filter(user=user).select_related('trip', 'trip__city', 'trip__category')
+    
+    if not my_wishlists.exists():
+        # 데이터가 없으면 '추천 점수'가 높은 순서대로 랜덤 10개
+        random_trips = Trip.objects.filter(status='active').order_by('-recommendation_score')[:20]
+        selected_trips = random.sample(list(random_trips), min(len(random_trips), 10))
+        return Response(TripListSerializer(selected_trips, many=True).data)
+
+    # 사용자 취향 분석 (빈도수 계산)
+    liked_city_ids = []      # 선호하는 구 
+    liked_category_ids = []  # 선호하는 카테고리 
+    
+    my_liked_trip_ids = set() # 이미 본 건 제외하기 위함
+
+    for w in my_wishlists:
+        trip = w.trip
+        my_liked_trip_ids.add(trip.id)
+        
+        if trip.city:
+            liked_city_ids.append(trip.city.id)
+        if trip.category:
+            liked_category_ids.append(trip.category.id)
+
+    city_counter = Counter(liked_city_ids)
+    category_counter = Counter(liked_category_ids)
+
+    # 나와 비슷한 취향을 가진 사람들 찾기
+    # 내가 찜한 여행지들을 찜한 다른 사람들의 ID를 찾음
+    similar_user_ids = Wishlist.objects.filter(trip_id__in=my_liked_trip_ids)\
+                                       .exclude(user=user)\
+                                       .values_list('user_id', flat=True)
+    
+    # 그 사람들이 찜한 '다른 여행지'들을 찾아서 가산점 부여
+    similar_people_picks = Wishlist.objects.filter(user_id__in=similar_user_ids)\
+                                           .exclude(trip_id__in=my_liked_trip_ids)\
+                                           .values_list('trip_id', flat=True)
+    
+    collab_counter = Counter(similar_people_picks) # {여행지ID: 추천수, ...}
+
+    # 추천 후보군 선정 (이미 찜한 것 제외)
+    # 성능을 위해 recommendation_score가 50점 이상인 것만 1차 필터링하거나, 전체를 대상으로 할 수 있음
+    candidates = Trip.objects.filter(status='active').exclude(id__in=my_liked_trip_ids)
+
+    scored_trips = []
+
+    for trip in candidates:
+        score = 0
+        
+        # [점수 요소 1] 사용자 취향 매칭 (비중: 가장 높음)
+        # 같은 카테고리(관광지)면 +200점 * 빈도수
+        if trip.category_id in category_counter:
+            score += category_counter[trip.category_id] * 200
+            
+        # 같은 지역(구)면 +100점 * 빈도수
+        if trip.city_id in city_counter:
+            score += city_counter[trip.city_id] * 100
+            
+        # [점수 요소 2] 협업 필터링 (비중: 중간)
+        # 비슷한 사람들이 많이 찜한 곳이면 +10점 * 빈도수
+        if trip.id in collab_counter:
+            score += collab_counter[trip.id] * 10
+            
+        # [점수 요소 3] 기본 품질 (비중: 베이스)
+        # recommendation_score (50~90점) 더하기
+        score += trip.recommendation_score
+
+        # 점수가 0점(관련 없음)이면 후보에서 탈락시킬 수도 있지만, 다양성을 위해 일단 포함
+        if score > 50: # 최소 품질 점수 이상만
+            scored_trips.append((score, trip))
+
+    # 점수 높은 순 정렬 및 상위 10개 추출
+    scored_trips.sort(key=lambda x: x[0], reverse=True)
+    
+    # 상위 10개 뽑기
+    top_10_trips = [trip for score, trip in scored_trips[:10]]
+
+    # 만약 10개가 안 되면 나머지는 그냥 recommendation_score가 높은 순으로 채우기
+    if len(top_10_trips) < 10:
+        needed = 10 - len(top_10_trips)
+        remaining = Trip.objects.filter(status='active')\
+                                .exclude(id__in=my_liked_trip_ids)\
+                                .exclude(id__in=[t.id for t in top_10_trips])\
+                                .order_by('-recommendation_score')[:needed]
+        top_10_trips.extend(remaining)
+
+    serializer = TripListSerializer(top_10_trips, many=True, context={'request': request})
+    return Response(serializer.data)
