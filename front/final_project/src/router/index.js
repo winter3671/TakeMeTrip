@@ -1,10 +1,11 @@
-import CommunityView from '@/view/CommunityView.vue'
-import CourseView from '@/view/CourseView.vue'
-import HomeView from '@/view/HomeView.vue'
-import InformationView from '@/view/InformationView.vue'
-import LocationView from '@/view/LocationView.vue'
-import MapView from '@/view/MapView.vue'
-import ProfileView from '@/view/ProfileView.vue'
+import CommunityView from '@/views/CommunityView.vue'
+import CourseView from '@/views/CourseView.vue'
+import HomeView from '@/views/HomeView.vue'
+import InformationView from '@/views/InformationView.vue'
+import LocationView from '@/views/LocationView.vue'
+import LoginView from '@/views/LoginView.vue'
+import MapView from '@/views/MapView.vue'
+import ProfileView from '@/views/ProfileView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -45,6 +46,12 @@ const router = createRouter({
       name: 'profile',
       component: ProfileView
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { hideNavbar: true }
+    }
   ],
 })
 

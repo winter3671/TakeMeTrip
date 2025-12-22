@@ -10,7 +10,7 @@
 
         <div class="category-box">
           <ul class="category-list">
-            <li v-for="item in categories" :key="item.id">
+            <li v-for="item in localCategories" :key="item.id">
               <button 
                 class="category-btn" 
                 :class="{ 'active': selectedCategory === item.id }"
@@ -85,7 +85,9 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import axios from 'axios';
+import { useTripStore } from '@/stores/trips';
+
+const tripStore = useTripStore();
 
 let map = null;
 let currentOverlay = null;
@@ -94,7 +96,7 @@ let markers = [];
 
 const currentAddress = ref('');
 const currentRegionName = ref(''); 
-const categories = ref([]);
+const localCategories = ref([]);
 const places = ref([]);
 const showSearchBtn = ref(false);
 const selectedCategory = ref(null);
@@ -127,8 +129,9 @@ const toggleSidebar = () => {
 
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/categories/');
-    categories.value = response.data.map(item => ({
+    const data = await tripStore.getCategories();
+
+    localCategories.value = data.map(item => ({
       id: item.id,
       name: item.name,
       icon: iconMap[item.name] || '📍'
@@ -152,12 +155,8 @@ const fetchPlaces = async () => {
       params.category = selectedCategory.value;
     }
 
-    const response = await axios.get('http://127.0.0.1:8000/api/trips/', { params });
-    if (response.data.results) {
-      places.value = response.data.results;
-    } else {
-      places.value = response.data;
-    }
+    const data = await tripStore.getTrips(params);
+    places.value = data;
 
     updateMarkers();
     
@@ -301,13 +300,33 @@ const moveToPlace = (place) => {
 </script>
 
 <style>
-body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
-.user-location-dot { width: 16px; height: 16px; background: #4285F4; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+body, html { 
+  margin: 0; 
+  padding: 0; 
+  width: 100%; 
+  height: 100%;
+}
+
+.user-location-dot { 
+  width: 16px; 
+  height: 16px; 
+  background: #4285F4; 
+  border: 2px solid #fff; 
+  border-radius: 50%; 
+  box-shadow: 0 0 5px rgba(0,0,0,0.5); 
+}
 </style>
 
 <style scoped>
-.map-wrapper { position: relative; width: 100%; height: 100vh; }
-#map { width: 100%; height: 100%; }
+.map-wrapper { 
+  position: relative; 
+  width: 100%; 
+  height: 100vh; 
+}
+#map { 
+  width: 100%; 
+  height: 100%; 
+}
 
 .sidebar {
   position: absolute; top: 0; left: 0;
@@ -345,48 +364,211 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
   box-shadow: 2px 0 4px rgba(0,0,0,0.1);
   z-index: 21;
 }
-.sidebar-toggle-btn:hover { background-color: #f7f7f7; }
 
-.address-box { padding: 24px 20px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
-.address-label { font-size: 13px; color: #888; display: block; margin-bottom: 4px; }
-.address-text { font-size: 20px; font-weight: 700; margin: 0; color: #333; }
-
-.category-box { padding: 15px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
-.category-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; list-style: none; padding: 0; margin: 0; }
-.category-btn {
-  background: none; border: none; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
+.sidebar-toggle-btn:hover { 
+  background-color: #f7f7f7; 
 }
-.category-btn .icon { font-size: 24px; }
-.category-btn .label { font-size: 11px; color: #666; font-weight: 500; }
-.category-btn.active .label { color: #4285F4; font-weight: 700; }
 
-.place-list-box { flex: 1; overflow-y: auto; background-color: #fff; }
-.place-list { list-style: none; padding: 0; margin: 0; }
+.address-box { 
+  padding: 24px 20px; 
+  border-bottom: 1px solid #f0f0f0; 
+  flex-shrink: 0; 
+}
+
+.address-label { 
+  font-size: 13px; 
+  color: #888; 
+  display: block; 
+  margin-bottom: 4px; 
+}
+
+.address-text { 
+  font-size: 20px; 
+  font-weight: 700; 
+  margin: 0; 
+  color: #333; 
+}
+
+.category-box { 
+  padding: 15px; 
+  border-bottom: 1px solid #f0f0f0; 
+  flex-shrink: 0; 
+}
+
+.category-list { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 10px; 
+  list-style: none; 
+  padding: 0; 
+  margin: 0; 
+}
+
+.category-btn {
+  background: none; 
+  border: none; 
+  cursor: pointer;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 5px;
+}
+
+.category-btn .icon { 
+  font-size: 24px; 
+}
+
+.category-btn .label { 
+  font-size: 11px; 
+  color: #666; 
+  font-weight: 500; 
+}
+
+.category-btn.active .label { 
+  color: #4285F4; 
+  font-weight: 700; 
+}
+
+.place-list-box { 
+  flex: 1; 
+  overflow-y: auto; 
+  background-color: #fff; 
+}
+
+.place-list { 
+  list-style: none; 
+  padding: 0; 
+  margin: 0; 
+}
 
 .place-item {
-  display: flex; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s;
+  display: flex; 
+  padding: 16px 20px; 
+  border-bottom: 1px solid #f5f5f5; 
+  cursor: pointer; 
+  transition: background 0.2s;
 }
-.place-item:hover { background-color: #f9f9f9; }
+
+.place-item:hover { 
+  background-color: #f9f9f9; 
+}
 
 .place-thumb {
-  width: 72px; height: 72px; border-radius: 12px; overflow: hidden; margin-right: 16px; flex-shrink: 0; background-color: #eee; border: 1px solid #f0f0f0;
+  width: 72px; 
+  height: 72px; 
+  border-radius: 12px; 
+  overflow: hidden;
+  margin-right: 16px; 
+  flex-shrink: 0; 
+  background-color: #eee; 
+  border: 1px solid #f0f0f0;
 }
-.place-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #aaa; }
 
-.place-info { flex: 1; display: flex; flex-direction: column; position: relative; justify-content: center; }
-.info-top { margin-bottom: 4px; }
-.place-title { font-size: 16px; font-weight: 700; color: #333; margin-right: 6px; }
-.place-cat { font-size: 12px; color: #999; }
-.place-dist { font-size: 13px; color: #666; margin-top: 4px; }
-.bookmark-icon { position: absolute; bottom: 0; right: 0; }
+.place-thumb img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
 
-.status-msg { padding: 40px; text-align: center; color: #999; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.status-msg.empty .empty-icon { font-size: 32px; }
+.no-img { 
+  width: 100%; 
+  height: 100%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 10px; 
+  color: #aaa; 
+}
 
-.search-btn-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 15; }
-.btn-redo-search { background: white; color: #4285F4; border: 1px solid #ddd; border-radius: 20px; padding: 10px 20px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; gap: 5px; }
-.MapControlView { position: absolute; top: 20px; right: 20px; z-index: 10; }
-.btn-location { width: 45px; height: 45px; background: white; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.place-info { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  position: relative; 
+  justify-content: center;
+}
+
+.info-top { 
+  margin-bottom: 4px; 
+}
+
+.place-title { 
+  font-size: 16px; 
+  font-weight: 700; 
+  color: #333; 
+  margin-right: 6px; 
+}
+
+.place-cat { 
+  font-size: 12px; 
+  color: #999; 
+}
+
+.place-dist { 
+  font-size: 13px; 
+  color: #666; 
+  margin-top: 4px; 
+}
+.bookmark-icon { 
+  position: absolute; 
+  bottom: 0; 
+  right: 0; 
+}
+
+.status-msg { 
+  padding: 40px; 
+  text-align: center; 
+  color: #999; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+.status-msg.empty .empty-icon { 
+  font-size: 32px; 
+}
+
+.search-btn-container { 
+  position: absolute; 
+  top: 20px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  z-index: 15; 
+}
+
+.btn-redo-search { 
+  background: white; 
+  color: #4285F4; 
+  border: 1px solid #ddd; 
+  border-radius: 20px; 
+  padding: 10px 20px; 
+  font-weight: 600; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 5px; 
+}
+
+.MapControlView { 
+  position: absolute; 
+  top: 20px; 
+  right: 20px; 
+  z-index: 10; 
+}
+
+.btn-location { 
+  width: 45px; 
+  height: 45px; 
+  background: white; 
+  border: 1px solid #ddd; 
+  border-radius: 8px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+}
+
 </style>

@@ -9,6 +9,10 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from pathlib import Path
 
@@ -94,7 +98,7 @@ REST_FRAMEWORK = {
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
@@ -181,22 +185,28 @@ REST_AUTH = {
     'JWT_AUTH_REFRESH_COOKIE': 'tmt-refresh-token',
     'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'SESSION_LOGIN': False,
 }
 
 SITE_ID = 1
 
-ACCOUNT_LOGIN_METHODS = {'email'} 
-ACCOUNT_SIGNUP_FIELDS = [
-    'email', 
-]
-ACCOUNT_USERNAME_REQUIRED = False 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None 
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'email' 
+ACCOUNT_EMAIL_REQUIRED = True
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_USERNAME_REQUIRED = False
+
+ACCOUNT_EMAIL_VERIFICATION = 'none' 
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
     },
     'kakao': {
-        'KEY': 'pixel_ratio',
-    },
+        'APP': {
+            'client_id': os.getenv('KAKAO_CLIENT_ID'),
+            'secret': os.getenv('KAKAO_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    }
 }
