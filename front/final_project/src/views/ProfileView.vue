@@ -83,14 +83,18 @@
               v-for="trip in paginatedWishlist" 
               :key="trip.id" 
               class="card-item"
-              @click="goToTripDetail(trip.id)"
             >
               <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
-              <button class="heart-btn active">
+              
+              <button 
+                class="heart-btn active" 
+                @click.stop="handleToggleLike(trip)"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#FF6B6B" viewBox="0 0 16 16">
                   <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
                 </svg>
               </button>
+
               <div class="card-overlay">
                 <h3 class="card-title">{{ trip.title }}</h3>
                 <p class="card-location">{{ trip.region_name }} {{ trip.city_name }}</p>
@@ -136,17 +140,20 @@ const myArticles = ref([]);
 const myComments = ref([]);
 const myWishlist = ref([]);
 
+// --- 페이지네이션 설정 ---
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
 const totalPages = computed(() => Math.ceil(myWishlist.value.length / itemsPerPage));
 
+// 현재 페이지에 보여줄 데이터 자르기
 const paginatedWishlist = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
   return myWishlist.value.slice(start, end);
 });
 
+// 페이지 변경
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
@@ -154,14 +161,31 @@ const changePage = (page) => {
   }
 };
 
+// --- 좋아요 토글 기능 ---
+const handleToggleLike = async (trip) => {
+  if (!confirm(`'${trip.title}' 찜을 취소하시겠습니까?`)) return;
+
+  const newStatus = await tripStore.toggleLike(trip.id);
+  
+  // 찜 취소 성공 시(false 반환) 목록에서 즉시 제거
+  if (newStatus === false) {
+    myWishlist.value = myWishlist.value.filter(t => t.id !== trip.id);
+    
+    // 현재 페이지에 데이터가 하나도 없게 되면 이전 페이지로 이동
+    if (paginatedWishlist.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--;
+    }
+  }
+};
+
 const fetchData = async () => {
-  // isLogin()이 아니라 isLogin으로 사용
   if (!accountStore.isLogin) {
     alert("로그인이 필요합니다.");
     router.push({ name: 'login' });
     return;
   }
 
+  // 1. 내 글 가져오기
   try {
     const params = { condition: 'author', search: accountStore.user.username };
     await communityStore.getArticles(params);
@@ -170,6 +194,7 @@ const fetchData = async () => {
     console.error("내 글 로드 실패", e);
   }
 
+  // 2. 찜 목록 가져오기
   try {
     const wishes = await tripStore.getMyWishlist();
     myWishlist.value = wishes;
@@ -177,6 +202,7 @@ const fetchData = async () => {
     console.error("찜 목록 로드 실패", e);
   }
 
+  // 3. 내 댓글 가져오기
   try {
     const comments = await communityStore.getMyComments();
     myComments.value = comments;
@@ -184,7 +210,6 @@ const fetchData = async () => {
     console.error("내 댓글 로드 실패", e);
   }
 };
-
 
 onMounted(() => {
   if (!accountStore.isLogin) {
@@ -200,9 +225,7 @@ onMounted(() => {
   fetchData();
 });
 
-
 const goToArticle = (id) => router.push({ name: 'article-detail', params: { id } });
-const goToTripDetail = (id) => router.push({ name: 'detail', params: { id } }); // 
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('ko-KR');

@@ -88,6 +88,8 @@ class MyWishlistView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TripListSerializer
 
+    pagination_class = None
+
     def get_queryset(self):
         user = self.request.user
         return Trip.objects.filter(wishlists__user=user, status='active').order_by('-wishlists__created_at')
