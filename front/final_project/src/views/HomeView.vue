@@ -62,30 +62,53 @@
         </div>
       </div>
 
-      <div class="card-grid">
-        <div v-if="tabData.length === 0" class="no-data">
-          {{ selectedCategory ? '해당 카테고리의 여행지가 없습니다.' : '데이터를 불러오는 중입니다...' }}
+      <div class="rec-slider-container">
+        <div v-if="isLoading" class="no-data">데이터를 불러오는 중...</div>
+        
+        <div v-else-if="tabData.length === 0" class="no-data">
+          {{ currentTab === 'wishlist' ? '찜한 여행지가 없습니다. ❤️를 눌러 담아보세요!' : '추천 여행지가 없습니다.' }}
         </div>
-        <div v-for="trip in tabData.slice(0, 4)" :key="trip.id" class="card-item" @click="goToDetail(trip.id)">
-          <img :src="trip.thumbnail_image" alt="여행지 사진" class="card-img" />
-          <button class="heart-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-          </button>
-          <div class="card-overlay">
-            <h3 class="card-title">{{ trip.title }}</h3>
-            <p class="card-location">{{ trip.region_name }} {{ trip.city_name }}</p>
+
+        <div v-else class="slider-wrapper rec-slider-wrapper">
+          <button class="nav-btn prev" @click="prevRecSlide" :disabled="recIndex === 0">&lt;</button>
+          
+          <div class="slider-window rec-slider-window">
+            <div 
+              class="slider-track"
+              :style="{ transform: `translateX(-${recIndex * (260 + 20)}px)` }"
+            >
+              <div 
+                v-for="trip in tabData" 
+                :key="trip.id" 
+                class="card-item slider-card" 
+                @click="goToDetail(trip.id)"
+              >
+                <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
+                <button class="heart-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </button>
+                <div class="card-overlay">
+                  <h3 class="card-title">{{ trip.title }}</h3>
+                  <p class="card-location">{{ trip.region_name }} {{ trip.city_name }}</p>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <button class="nav-btn next" @click="nextRecSlide" :disabled="isRecEnd">&gt;</button>
         </div>
       </div>
 
       <div class="action-btn-area">
-        <button class="ai-full-btn">오늘의 AI 추천</button>
+        <button class="ai-full-btn" @click="refreshData">
+          🔄 새로고침
+        </button>
       </div>
+    </div>
 
-      <div class="bottom-banners">
-        <div v-for="(banner, index) in infoBanners" :key="index" class="banner-item">
-          <img :src="banner.img" alt="정보 배너" />
-        </div>
+    <div class="bottom-banners">
+      <div v-for="(banner, index) in infoBanners" :key="index" class="banner-item">
+        <img :src="banner.img" alt="정보 배너" />
       </div>
     </div>
   </div>
@@ -95,39 +118,92 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTripStore } from '@/stores/trips';
+import { useAccountStore } from '@/stores/accounts'; // Login check
 import { storeToRefs } from 'pinia';
 
 import banner1 from '@/assets/banner1.png';
 import banner2 from '@/assets/banner2.png';
 import banner3 from '@/assets/banner3.png';
+import noImage from '@/assets/no_image.png';
 
 const tripStore = useTripStore();
-const { categories } = storeToRefs(tripStore);
-
+const accountStore = useAccountStore();
 const router = useRouter();
+
 const localCategories = ref([]);
 const tabData = ref([]);
 const currentTab = ref('recommend');
 const bannerTrips = ref([]);
-const currentIndex = ref(0);
 const selectedCategory = ref(null);
+const isLoading = ref(false);
 
-const infoBanners = ref([ { img: banner1 }, { img: banner2 }, { img: banner3 } ]);
-const iconMap = { '관광지': '🚗', '문화시설': '🏛️', '축제/공연': '🎉', '여행코스': '🗺️', '레포츠': '⚽', '숙박': '🏠', '쇼핑': '🛍️', '음식점': '🍽️' };
-
+const currentIndex = ref(0);
 const prevSlide = () => { if (currentIndex.value > 0) currentIndex.value--; };
 const nextSlide = () => { if (currentIndex.value < bannerTrips.value.length - 3) currentIndex.value++; };
 const isEnd = computed(() => currentIndex.value >= bannerTrips.value.length - 3);
 
+const recIndex = ref(0);
+const visibleRecCount = 4;
+const prevRecSlide = () => { if (recIndex.value > 0) recIndex.value--; };
+const nextRecSlide = () => { 
+  if (recIndex.value < tabData.value.length - visibleRecCount) recIndex.value++; 
+};
+const isRecEnd = computed(() => recIndex.value >= tabData.value.length - visibleRecCount);
+
+const infoBanners = ref([ { img: banner1 }, { img: banner2 }, { img: banner3 } ]);
+const iconMap = { '관광지': '🚗', '문화시설': '🏛️', '축제/공연': '🎉', '여행코스': '🗺️', '레포츠': '⚽', '숙박': '🏠', '쇼핑': '🛍️', '음식점': '🍽️' };
+
+const shuffleArray = (array) => {
+  let _array = [...array];
+  for (let i = _array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [_array[i], _array[j]] = [_array[j], _array[i]];
+  }
+  return _array;
+};
+
+const fetchTabData = async () => {
+  isLoading.value = true;
+  tabData.value = [];
+  recIndex.value = 0;
+
+  try {
+    if (currentTab.value === 'recommend') {
+      const data = await tripStore.getRandomTrips(selectedCategory.value);
+      tabData.value = data; 
+
+    } else if (currentTab.value === 'ai') {
+      const data = await tripStore.getRandomTrips(null);
+      tabData.value = data;
+
+    } else if (currentTab.value === 'wishlist') {
+      if (!accountStore.isLogin) {
+        tabData.value = [];
+      } else {
+        const fullWishlist = await tripStore.getMyWishlist();
+        if (fullWishlist && fullWishlist.length > 0) {
+           const shuffled = shuffleArray(fullWishlist);
+           tabData.value = shuffled.slice(0, 10);
+        } else {
+           tabData.value = [];
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Data load failed:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 const fetchBannerTrips = async () => {
   try {
     const data = await tripStore.getRandomBannerTrips();
-
     if (data && data.length > 0) {
       bannerTrips.value = data;
     }
   } catch (error) {
-    console.error("배너 데이터 로드 실패:", error);
+    console.error("Banner load failed:", error);
   }
 };
 
@@ -146,36 +222,31 @@ const selectCategory = (categoryId) => {
   } else {
     selectedCategory.value = categoryId;
   }
-  switchTab('recommend');
+  
+  if (currentTab.value !== 'recommend') {
+    currentTab.value = 'recommend';
+  }
+  fetchTabData();
 };
 
 const switchTab = async (tabName) => {
   currentTab.value = tabName;
-  tabData.value = [];
-
-  let params = {};
-
-  if (tabName === 'recommend') {
-    params = { sort: 'recommendation_score' };
-    if (selectedCategory.value) {
-      params.category = selectedCategory.value;
-    }
-  } else if (tabName === 'ai') {
-    params = { sort: 'latest' };
-  } else if (tabName === 'wishlist') {
-    params = {}; 
-  }
-
-  const data = await tripStore.getTrips(params);
-  tabData.value = data;
+  if (tabName !== 'recommend') selectedCategory.value = null;
+  fetchTabData();
 };
 
-const goToDetail = (id) => { console.log(id); };
+const refreshData = () => {
+  fetchTabData();
+};
+
+const goToDetail = (id) => { 
+    router.push({ name: 'detail', params: { id } });
+};
 
 onMounted(() => {
   fetchBannerTrips();
   fetchCategories();
-  switchTab('recommend');
+  fetchTabData();
 });
 </script>
 
@@ -192,7 +263,6 @@ onMounted(() => {
 .home-container::-webkit-scrollbar { 
   display: none; 
 }
-
 .home-container { 
   -ms-overflow-style: none; 
   scrollbar-width: none; 
@@ -223,6 +293,13 @@ onMounted(() => {
   justify-content: center; 
 }
 
+.rec-slider-wrapper {
+  position: relative;
+  bottom: auto;
+  width: 100%;
+  height: 320px; 
+}
+
 .slider-window { 
   width: 880px; 
   height: 100%; 
@@ -230,11 +307,21 @@ onMounted(() => {
   border-radius: 16px; 
 }
 
+.rec-slider-window {
+  width: 100%;
+}
+
 .slider-track { 
   display: flex; 
   gap: 20px; 
   transition: transform 0.4s ease-in-out; 
   height: 100%; 
+}
+
+.slider-card {
+  width: 260px; 
+  min-width: 260px;
+  height: 100%;
 }
 
 .slide-item { 
@@ -349,7 +436,7 @@ onMounted(() => {
   background-color: #fff;
   border: 1px solid #eee; 
   box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-  cursor: pointer;
+  cursor: pointer; 
   font-size: 28px; 
   display: flex; 
   align-items: center; 
@@ -363,17 +450,17 @@ onMounted(() => {
 }
 
 .category-circle.active {
-  background-color: #FFB78B;
-  border-color: #FFB78B;
+  background-color: #FFB78B; 
+  border-color: #FFB78B; 
   color: white;
-  transform: translateY(-3px);
+  transform: translateY(-3px); 
   box-shadow: 0 6px 12px rgba(255, 183, 139, 0.4);
 }
 
 .label { 
-  font-size: 13px;
-   color: #666; 
-   font-weight: 500; 
+  font-size: 13px; 
+  color: #666; 
+  font-weight: 500; 
 }
 
 .label.active-label { 
@@ -385,6 +472,13 @@ onMounted(() => {
   max-width: 1000px; 
   margin: 0 auto; 
   padding: 0 20px; 
+}
+
+.rec-slider-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  min-height: 320px;
 }
 
 .tabs-container { 
@@ -429,13 +523,6 @@ onMounted(() => {
   border-top: 10px solid #7B9DFF; 
 }
 
-.card-grid { 
-  display: grid; 
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 15px; 
-  margin-bottom: 40px; 
-}
-
 .card-item { 
   position: relative; 
   height: 300px; 
@@ -444,8 +531,8 @@ onMounted(() => {
   cursor: pointer; 
   box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
   transition: transform 0.2s; 
+  flex-shrink: 0;
 }
-
 .card-item:hover { 
   transform: translateY(-5px); 
 }
@@ -457,7 +544,7 @@ onMounted(() => {
 }
 
 .heart-btn { 
-  position: absolute;
+  position: absolute; 
   top: 10px; 
   right: 10px; 
   background: none; 
@@ -483,6 +570,7 @@ onMounted(() => {
   margin: 0 0 5px 0; 
   text-shadow: 0 1px 3px rgba(0,0,0,0.5); 
 }
+
 .card-location { 
   font-size: 13px; 
   opacity: 0.9; 
@@ -512,10 +600,10 @@ onMounted(() => {
 }
 
 .no-data { 
-  grid-column: span 4; 
-  text-align: center;
+  text-align: center; 
   padding: 40px; 
   color: #888; 
+  width: 100%;
 }
 
 .bottom-banners { 
@@ -546,19 +634,11 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .card-grid { 
-    grid-template-columns: repeat(2, 1fr); 
-  }
-
   .bottom-banners { 
     grid-template-columns: 1fr; 
   }
 
-  .slider-window { 
-    width: 100%; 
-  } 
-
-  .slider-wrapper { 
+  .slider-window, .slider-wrapper { 
     width: 100%; 
   }
 }
