@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'users',
     'trips',
     'community',
+    'planner',
 ]
 
 AUTHENTICATION_BACKENDS = [
