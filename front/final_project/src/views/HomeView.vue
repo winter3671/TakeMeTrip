@@ -119,9 +119,25 @@ const prevSlide = () => { if (currentIndex.value > 0) currentIndex.value--; };
 const nextSlide = () => { if (currentIndex.value < bannerTrips.value.length - 3) currentIndex.value++; };
 const isEnd = computed(() => currentIndex.value >= bannerTrips.value.length - 3);
 
+const shuffleArray = (array) => {
+  let _array = [...array];
+  for (let i = _array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [_array[i], _array[j]] = [_array[j], _array[i]];
+  }
+  return _array;
+};
+
 const fetchBannerTrips = async () => {
-  const data = await tripStore.getTrips();
-  bannerTrips.value = data.slice(0, 10);
+  try {
+    const data = await tripStore.getRandomBannerTrips();
+
+    if (data && data.length > 0) {
+      bannerTrips.value = data;
+    }
+  } catch (error) {
+    console.error("배너 데이터 로드 실패:", error);
+  }
 };
 
 const fetchCategories = async () => {

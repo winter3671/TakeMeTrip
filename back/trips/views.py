@@ -179,3 +179,18 @@ class NearbyTripView(generics.ListAPIView):
         ).order_by('distance_diff')
 
         return queryset[:10]
+    
+class BannerRandomView(APIView):
+    def get(self, request):
+        # 1. status가 active이고, 썸네일이 null이 아니며 빈 문자열도 아닌 데이터 필터링
+        queryset = Trip.objects.filter(
+            status='active',
+            thumbnail_image__isnull=False
+        ).exclude(thumbnail_image='')
+
+        # 2. 전체 데이터 중에서 무작위로 섞은 뒤 10개만 슬라이싱
+        random_trips = queryset.order_by('?')[:10]
+
+        # 3. 직렬화 후 반환
+        serializer = TripListSerializer(random_trips, many=True, context={'request': request})
+        return Response(serializer.data)

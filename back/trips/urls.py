@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import TripListView, TripDetailView, TripLikeView, MyWishlistView, RandomTripView, CourseListCreateView, CourseDetailView, NearbyTripView
+from .views import TripListView, TripDetailView, TripLikeView, MyWishlistView, RandomTripView, CourseListCreateView, CourseDetailView, NearbyTripView, BannerRandomView
 from . import views
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('courses/', CourseListCreateView.as_view(), name='course-list-create'),
     path('courses/<int:pk>/', CourseDetailView.as_view(), name='course-detail'),
     path('recommend/nearby/', NearbyTripView.as_view(), name='recommend-nearby'),
+    path('banner-random/', BannerRandomView.as_view(), name='banner-random'),
 ]
