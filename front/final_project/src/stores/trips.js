@@ -16,10 +16,19 @@ export const useTripStore = defineStore('trip', () => {
       if (res.data.count !== undefined) {
         totalCount.value = res.data.count
       }
-
       return trips.value
     } catch (error) {
       console.error('여행지 목록 로드 실패:', error)
+      return []
+    }
+  }
+
+  const getRandomBannerTrips = async () => {
+    try {
+      const res = await axios.get(`${API_URL}banner-random/`)
+      return res.data
+    } catch (error) {
+      console.error('배너 데이터 로드 실패:', error)
       return []
     }
   }
@@ -42,6 +51,7 @@ export const useTripStore = defineStore('trip', () => {
     categories,
     totalCount,
     getTrips,
-    getCategories
+    getCategories,
+    getRandomBannerTrips
   }
 }, { persist: true })

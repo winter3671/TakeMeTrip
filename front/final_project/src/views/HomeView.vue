@@ -120,8 +120,15 @@ const nextSlide = () => { if (currentIndex.value < bannerTrips.value.length - 3)
 const isEnd = computed(() => currentIndex.value >= bannerTrips.value.length - 3);
 
 const fetchBannerTrips = async () => {
-  const data = await tripStore.getTrips();
-  bannerTrips.value = data.slice(0, 10);
+  try {
+    const data = await tripStore.getRandomBannerTrips();
+
+    if (data && data.length > 0) {
+      bannerTrips.value = data;
+    }
+  } catch (error) {
+    console.error("배너 데이터 로드 실패:", error);
+  }
 };
 
 const fetchCategories = async () => {
