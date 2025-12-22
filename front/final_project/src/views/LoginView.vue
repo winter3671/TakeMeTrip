@@ -71,9 +71,9 @@ const route = useRoute();
 const username = ref('');
 const password = ref('');
 
-const KAKAO_JS_KEY = 'dc32b2b8795a175bdf7de2093e10fa6e'; 
+const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
 
-const REST_API_KEY = 'ebf26955396890d8dc443a720747cd59';
+const REST_API_KEY = import.meta.env.VITE_REST_API_KEY
 
 onMounted(async () => {
   // 1. SDK 초기화 (init)
