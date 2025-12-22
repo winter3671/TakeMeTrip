@@ -69,6 +69,8 @@ class Trip(models.Model):
     mapx = models.FloatField(default=0.0) # 경도
     mapy = models.FloatField(default=0.0) # 위도
 
+    rest_date = models.CharField(max_length=100, blank=True, null=True)
+
     class Meta:
         db_table = 'trips'
 
@@ -144,3 +146,4 @@ class CoursePlace(models.Model):
 
     def __str__(self):
         return f"{self.course.title} ({self.day}일차 - {self.order}번째): {self.trip.title}"
+    
