@@ -307,20 +307,49 @@ def recommend_by_ai(request):
         if score > 50: # 최소 품질 점수 이상만
             scored_trips.append((score, trip))
 
-    # 점수 높은 순 정렬 및 상위 10개 추출
+    # 점수 높은 순 정렬
     scored_trips.sort(key=lambda x: x[0], reverse=True)
     
-    # 상위 10개 뽑기
-    top_10_trips = [trip for score, trip in scored_trips[:10]]
+    # 상위 50개 후보군 추출 (Trip 객체만 리스트로 변환)
+    top_50_candidates = [trip for score, trip in scored_trips[:50]]
 
-    # 만약 10개가 안 되면 나머지는 그냥 recommendation_score가 높은 순으로 채우기
-    if len(top_10_trips) < 10:
-        needed = 10 - len(top_10_trips)
+    final_trips = []
+
+    # 후보가 10개 이하라면 랜덤 로직 없이 그냥 다 보여줌
+    if len(top_50_candidates) <= 10:
+        final_trips = top_50_candidates
+    else:
+        # 티어 구분
+        high_tier = top_50_candidates[:10]  # 1위 ~ 10위 (최상위권)
+        lower_tier = top_50_candidates[10:] # 11위 ~ 50위 (차상위권)
+
+        # Top 10에서 최소 3개 ~ 최대 5개 랜덤 선택
+        # (새로고침 할 때마다 1군과 2군의 비율이 조금씩 달라지게 함)
+        num_from_high = random.randint(3, min(len(high_tier), 5))
+        selected_high = random.sample(high_tier, num_from_high)
+
+        # 나머지 자리는 Lower Tier에서 랜덤 선택
+        num_needed = 10 - len(selected_high)
+        # lower_tier 개수가 부족할 경우를 대비해 min 사용
+        selected_low = random.sample(lower_tier, min(len(lower_tier), num_needed))
+
+        # 합치기 및 셔플 (1등이 항상 맨 위에 뜨지 않도록)
+        final_trips = selected_high + selected_low
+        random.shuffle(final_trips)
+
+    # 만약 필터링 결과 10개가 안 되면 나머지는 기본 점수 높은 순으로 채우기
+ 
+    if len(final_trips) < 10:
+        needed = 10 - len(final_trips)
+        # 이미 뽑힌 ID 제외
+        current_ids = [t.id for t in final_trips]
+        
         remaining = Trip.objects.filter(status='active')\
                                 .exclude(id__in=my_liked_trip_ids)\
-                                .exclude(id__in=[t.id for t in top_10_trips])\
+                                .exclude(id__in=current_ids)\
                                 .order_by('-recommendation_score')[:needed]
-        top_10_trips.extend(remaining)
+        
+        final_trips.extend(remaining)
 
-    serializer = TripListSerializer(top_10_trips, many=True, context={'request': request})
+    serializer = TripListSerializer(final_trips, many=True, context={'request': request})
     return Response(serializer.data)
