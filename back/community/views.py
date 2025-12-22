@@ -14,13 +14,24 @@ def article_list(request):
     if request.method == 'GET':
         articles = Article.objects.all().order_by('-created_at')
 
-        search_query = request.GET.get('search')
-        if search_query:
-            # 제목 또는 내용에 검색어가 포함된 것만 필터링
-            # ?search=검색어 로 검색
-            articles = articles.filter(
-                Q(title__icontains=search_query) | Q(content__icontains=search_query)
-            )
+        search_keyword = request.GET.get('search', '')     # 검색어 (없으면 빈 문자열)
+        search_condition = request.GET.get('condition', 'title_content')   # 검색 조건 (기본값: 제목+내용)
+
+        if search_keyword:
+            if search_condition == 'title':
+                articles = articles.filter(title__icontains=search_keyword)
+            
+            elif search_condition == 'content':
+                articles = articles.filter(content__icontains=search_keyword)
+            
+            elif search_condition == 'author':
+                articles = articles.filter(user__username__icontains=search_keyword)
+            
+            else: 
+                articles = articles.filter(
+                    Q(title__icontains=search_keyword) | 
+                    Q(content__icontains=search_keyword)
+                )
 
         serializer = ArticleListSerializer(articles, many=True)
         return Response(serializer.data)
