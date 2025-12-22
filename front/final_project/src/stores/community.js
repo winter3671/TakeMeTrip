@@ -3,19 +3,16 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
-// ★ [수정 1] 파일명 'accounts.js'로 정확히 import (s가 붙어있는지 확인)
 import { useAccountStore } from '@/stores/accounts' 
 
 export const useCommunityStore = defineStore('community', () => {
   const router = useRouter()
   
-  // ★ [수정 2] 여기서 accountStore를 반드시 선언해야 아래 함수들에서 쓸 수 있습니다.
   const accountStore = useAccountStore()
   
   const articles = ref([])
   const article = ref(null)
 
-  // API URL 확인 (http://127.0.0.1:8000/api/community)
   const API_URL = 'http://127.0.0.1:8000/api/community'
 
   // 게시글 목록 조회
@@ -45,7 +42,6 @@ export const useCommunityStore = defineStore('community', () => {
 
       await axios.delete(`${API_URL}/articles/${id}/`, {
         headers: {
-          // ★ Token -> Bearer 로 변경
           Authorization: `Bearer ${accountStore.token}`
         }
       })
@@ -62,7 +58,6 @@ export const useCommunityStore = defineStore('community', () => {
     try {
       const res = await axios.post(`${API_URL}/articles/`, payload, {
         headers: {
-          // ★ Token -> Bearer 로 변경
           Authorization: `Bearer ${accountStore.token}` 
         }
       })
@@ -80,7 +75,6 @@ export const useCommunityStore = defineStore('community', () => {
     try {
       await axios.post(`${API_URL}/articles/${articleId}/comments/`, { content }, {
         headers: {
-          // ★ Token -> Bearer 로 변경
           Authorization: `Bearer ${accountStore.token}`
         }
       })
@@ -96,7 +90,6 @@ export const useCommunityStore = defineStore('community', () => {
     try {
       const res = await axios.post(`${API_URL}/articles/${articleId}/likes/`, {}, {
         headers: {
-          // ★ Token -> Bearer 로 변경
           Authorization: `Bearer ${accountStore.token}`
         }
       })
@@ -112,6 +105,31 @@ export const useCommunityStore = defineStore('community', () => {
     }
   }
 
+  const deleteComment = function(articleId, commentId) {
+  if (!confirm('댓글을 삭제하시겠습니까?')) return
+
+  axios({
+    method: 'delete',
+    url: `${API_URL}/articles/${articleId}/comments/${commentId}/`,
+    headers: {
+      Authorization: `Bearer ${accountStore.token}`
+    }
+  })
+  .then(res => {
+    getArticleDetail(articleId)
+  })
+  .catch(err => {
+    
+    if (err.response?.status === 403) {
+      alert('댓글 삭제 권한이 없습니다.')
+    } else if (err.response?.status === 404) {
+      alert('댓글을 찾을 수 없습니다.')
+    } else {
+      alert('댓글 삭제에 실패했습니다.')
+    }
+  })
+}
+
   return { 
     articles, 
     article, 
@@ -121,6 +139,7 @@ export const useCommunityStore = defineStore('community', () => {
     createArticle,
     createComment,
     likeArticle,
+    deleteComment,
     API_URL 
   }
 })

@@ -39,9 +39,9 @@
         <span>좋아요 {{ article.like_count }}</span>
       </button>
     </div>
-
+    
     <hr class="divider-line">
-
+    
     <div class="comment-section">
       <h3>댓글 <span class="comment-count">{{ article.comment_set.length }}</span></h3>
 
@@ -53,6 +53,7 @@
         ></textarea>
         <button @click="submitComment" class="submit-btn">등록</button>
       </div>
+      
       <div v-else class="login-plz">
         댓글을 작성하려면 로그인이 필요합니다.
       </div>
@@ -60,8 +61,18 @@
       <div class="comment-list">
         <div v-for="comment in article.comment_set" :key="comment.id" class="comment-item">
           <div class="comment-header">
-            <span class="comment-author">{{ comment.username }}</span>
-            <span class="comment-date">{{ formatTime(comment.created_at) }}</span>
+            <div class="info-left">
+              <span class="comment-author">{{ comment.username }}</span>
+              <span class="comment-date">{{ formatTime(comment.created_at) }}</span>
+            </div>
+            
+            <button 
+              v-if="accountStore.user && accountStore.user.username === comment.username"
+              @click="deleteComment(comment.id)"
+              class="comment-delete-btn"
+            >
+              ✕
+            </button>
           </div>
           <p class="comment-content">{{ comment.content }}</p>
         </div>
@@ -99,14 +110,15 @@ const { article } = storeToRefs(communityStore);
 const commentContent = ref('');
 const articleId = route.params.id;
 
-// 작성자 본인 확인 (store의 user정보와 게시글 작성자 비교)
-// 주의: 백엔드 UserSerializer에서 id(pk)를 보내준다면 id로 비교하는게 가장 정확함.
-// 현재는 username으로 비교 예시
+
 const isAuthor = computed(() => {
   return accountStore.user && article.value && accountStore.user.username === article.value.username;
 });
 
 onMounted(() => {
+  if (accountStore.token && !accountStore.user) {
+    accountStore.getUserInfo();
+  }
   communityStore.getArticleDetail(articleId);
 });
 
@@ -115,11 +127,10 @@ const handleDelete = () => {
   communityStore.deleteArticle(articleId);
 };
 
-// 게시글 수정 (페이지 이동)
-const goToUpdate = () => {
-  // router.push({ name: 'article-update', params: { id: articleId } });
-  alert('수정 기능은 추후 구현 예정입니다.');
+const deleteComment = (commentId) => {
+  communityStore.deleteComment(articleId, commentId);
 };
+
 
 // 좋아요 클릭
 const handleLike = () => {
@@ -154,6 +165,7 @@ const formatTime = (dateString) => {
     month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
   });
 };
+
 </script>
 
 <style scoped>
@@ -360,6 +372,19 @@ const formatTime = (dateString) => {
   padding: 40px;
   color: #999;
   font-size: 14px;
+}
+
+.comment-delete-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.2s;
+}
+.comment-delete-btn:hover {
+  color: #ff6b6b;
 }
 
 .bottom-nav {
