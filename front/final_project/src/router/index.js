@@ -11,6 +11,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import SignUpView from '@/views/SignUpView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAccountStore } from '@/stores/accounts'
+import SocialCallback from '@/views/SocialCallback.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -79,7 +80,11 @@ const router = createRouter({
           }
       } 
     },
-
+    {
+      path: '/auth/callback',
+      name: 'SocialCallback',
+      component: SocialCallback,
+    },
   ],
 })
 
