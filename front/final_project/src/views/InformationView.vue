@@ -28,22 +28,70 @@
         조건에 맞는 축제 정보가 없습니다.
       </div>
 
-      <div v-else class="festival-grid">
-        <div 
-          v-for="trip in store.trips" 
-          :key="trip.id" 
-          class="festival-card"
-        >
-          <div class="card-thumb">
-            <img :src="trip.thumbnail_image || '/src/assets/no_image.png'" :alt="trip.title" />
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">{{ trip.title }}</h3>
-            <p class="card-date">{{ trip.start_date }} ~ {{ trip.end_date }}</p> 
-            <p class="card-loc">{{ trip.region_name }} {{ trip.city_name }}</p>
+      <div v-else>
+        <div class="festival-grid">
+          <div 
+            v-for="trip in store.trips" 
+            :key="trip.id" 
+            class="festival-card"
+          >
+            <div class="card-thumb">
+              <img :src="trip.thumbnail_image || '/src/assets/no_image.png'" :alt="trip.title" />
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">{{ trip.title }}</h3>
+              <p class="card-date" v-if="trip.start_date && trip.end_date">
+                {{ trip.start_date }} ~ {{ trip.end_date }}
+              </p> 
+              <p class="card-loc">{{ trip.region_name }} {{ trip.city_name }}</p>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div class="pagination" v-if="totalPages > 0">
+          <button 
+            class="page-btn move" 
+            :disabled="currentPage === 1" 
+            @click="changePage(1)"
+          >
+            &lt;&lt;
+          </button>
+
+          <button 
+            class="page-btn move" 
+            :disabled="currentPage === 1" 
+            @click="changePage(currentPage - 1)"
+          >
+            &lt;
+          </button>
+
+          <button 
+            v-for="page in visiblePages" 
+            :key="page" 
+            class="page-btn number"
+            :class="{ active: currentPage === page }"
+            @click="changePage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button 
+            class="page-btn move" 
+            :disabled="currentPage === totalPages" 
+            @click="changePage(currentPage + 1)"
+          >
+            &gt;
+          </button>
+
+          <button 
+            class="page-btn move" 
+            :disabled="currentPage === totalPages" 
+            @click="changePage(totalPages)"
+          >
+            &gt;&gt;
+          </button>
+        </div>
+        </div>
     </div>
 
   </div>
@@ -59,6 +107,7 @@ const isLoading = ref(false);
 const selectedCity = ref('');
 const selectedDistrict = ref('');
 
+const currentPage = ref(1);
 
 const fetchFestivals = async () => {
   isLoading.value = true;
@@ -73,7 +122,7 @@ const fetchFestivals = async () => {
 
     const params = {
       category: target.id,
-      page: 1,
+      page: currentPage.value,
       ordering: '-created_at'
     };
 
@@ -90,6 +139,25 @@ const fetchFestivals = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const totalPages = computed(() => Math.ceil(store.totalCount / 10));
+
+const visiblePages = computed(() => {
+  const pageLimit = 5;
+  const currentGroup = Math.ceil(currentPage.value / pageLimit);
+  const start = (currentGroup - 1) * pageLimit + 1;
+  const end = Math.min(start + pageLimit - 1, totalPages.value);
+  const pages = [];
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
+
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchFestivals();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const subRegionData = {
@@ -120,10 +188,12 @@ const districtList = computed(() => {
 
 const handleCityChange = () => {
   selectedDistrict.value = '';
+  currentPage.value = 1;
   fetchFestivals();
 };
 
 const handleDistrictChange = () => {
+  currentPage.value = 1;
   fetchFestivals();
 };
 
@@ -235,5 +305,46 @@ onMounted(() => {
   padding: 80px 0;
   color: #888;
   font-size: 16px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 50px;
+  margin-bottom: 40px;
+}
+
+.page-btn {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #666;
+  min-width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: #333;
+  color: #333;
+}
+
+.page-btn.active {
+  background-color: #333;
+  color: white;
+  border-color: #333;
+  font-weight: bold;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
