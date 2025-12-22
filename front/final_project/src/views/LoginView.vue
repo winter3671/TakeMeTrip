@@ -16,7 +16,7 @@
 
         <div class="links">
           <a href="#" class="link-text">Forgot Password?</a>
-          <a href="#" class="link-text signup">회원가입</a>
+          <RouterLink class="link-text signup" :to="{ name : 'signup'}">회원가입</RouterLink>
         </div>
       </form>
 
@@ -60,7 +60,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, RouterLink  } from 'vue-router';
 import axios from 'axios';
 import { useTripStore } from '@/stores/trips';
 

@@ -6,6 +6,7 @@ import LocationView from '@/views/LocationView.vue'
 import LoginView from '@/views/LoginView.vue'
 import MapView from '@/views/MapView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import SignUpView from '@/views/SignUpView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -50,7 +51,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { hideNavbar: true }
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignUpView, 
     }
   ],
 })
