@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
     path("api/auth/social/", include("users.urls")),
+    path("api/community/", include("community.urls")),
 ]
 
 if settings.DEBUG:
