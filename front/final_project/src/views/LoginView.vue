@@ -16,7 +16,7 @@
 
         <div class="links">
           <a href="#" class="link-text">Forgot Password?</a>
-          <a href="#" class="link-text signup">회원가입</a>
+          <RouterLink class="link-text signup" :to="{ name : 'signup'}">회원가입</RouterLink>
         </div>
       </form>
 
@@ -60,9 +60,8 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useTripStore } from '@/stores/trips';
+import { RouterLink } from 'vue-router';
 
-const store = useTripStore();
 const username = ref('');
 const password = ref('');
 
