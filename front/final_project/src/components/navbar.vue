@@ -101,6 +101,9 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useAccountStore } from '@/stores/accounts'
+
+const store = useAccountStore()
 
 const router = useRouter()
 const isMenuOpen = ref(false)
@@ -120,9 +123,8 @@ const gotoMap = () => {
 }
 
 const gotoProfile = () => {
-  const isLoggedIn = !!localStorage.getItem('access_token');
 
-  if (isLoggedIn) {
+  if (store.isLogin) {
     router.push({ name: 'profile' });
   } else {
     router.push({ name : 'login'});
