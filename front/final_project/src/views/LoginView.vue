@@ -140,7 +140,6 @@ const sendTokenToBackend = async (accessToken) => {
     });
 
     localStorage.setItem('accessToken', response.data.key || response.data.access);
-    alert('로그인 되었습니다! 🎉');
     
     accountStore.token = response.data.key || response.data.access;
 

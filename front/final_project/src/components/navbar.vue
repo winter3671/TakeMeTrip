@@ -21,21 +21,11 @@
         
         <div class="desktop-menu">
           <div class="nav-menu">
-            <RouterLink :to="{ name: 'home' }" class="nav-link">
-              <span>홈</span>
-            </RouterLink>
-            <RouterLink :to="{ name: 'information' }" class="nav-link">
-              <span>여행정보</span>
-            </RouterLink>
-            <RouterLink :to="{ name: 'location' }" class="nav-link">
-              <span>여행지역</span>
-            </RouterLink>
-            <RouterLink :to="{ name: 'course' }" class="nav-link">
-              <span>여행코스</span>
-            </RouterLink>
-            <RouterLink :to="{ name: 'community' }" class="nav-link">
-              <span>커뮤니티</span>
-            </RouterLink>
+            <RouterLink :to="{ name: 'home' }" class="nav-link"><span>홈</span></RouterLink>
+            <RouterLink :to="{ name: 'information' }" class="nav-link"><span>여행정보</span></RouterLink>
+            <RouterLink :to="{ name: 'location' }" class="nav-link"><span>여행지역</span></RouterLink>
+            <RouterLink :to="{ name: 'course' }" class="nav-link"><span>여행코스</span></RouterLink>
+            <RouterLink :to="{ name: 'community' }" class="nav-link"><span>커뮤니티</span></RouterLink>
           </div>
           
           <div class="icon-menu">
@@ -44,11 +34,19 @@
                 <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z"/>
               </svg>
             </button>
-            <button @click="gotoProfile" class="icon-btn" title="프로필">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-              </svg>
-            </button>
+
+            <div class="profile-container">
+              <button @click="handleProfileClick" class="icon-btn" title="프로필">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                </svg>
+              </button>
+              <div v-if="showProfileMenu && store.isLogin" class="toggle-menu desktop-pos">
+                <button class="menu-item" @click="goToMyPage">마이페이지</button>
+                <button class="menu-item logout" @click="handleLogout">로그아웃</button>
+              </div>
+            </div>
+
             <button class="icon-btn" title="언어">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h3.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
@@ -79,12 +77,21 @@
               </svg>
               <span>지도</span>
             </button>
-            <button class="mobile-icon-btn" @click="gotoProfile">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-              </svg>
-              <span>프로필</span>
-            </button>
+            
+            <div class="profile-container">
+              <button class="mobile-icon-btn" @click="handleProfileClick">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                </svg>
+                <span>{{ store.isLogin ? '내정보' : '프로필' }}</span>
+              </button>
+
+              <div v-if="showProfileMenu && store.isLogin" class="toggle-menu mobile-pos">
+                <button class="menu-item" @click="goToMyPage">마이페이지</button>
+                <button class="menu-item logout" @click="handleLogout">로그아웃</button>
+              </div>
+            </div>
+
             <button class="mobile-icon-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h3.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
@@ -101,13 +108,14 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { useAccountStore } from '@/stores/accounts'
+// 파일 경로가 'stores/account.js'인지 'stores/accounts.js'인지 정확히 확인해주세요.
+import { useAccountStore } from '@/stores/accounts' 
 
 const store = useAccountStore()
-
 const router = useRouter()
+
 const isMenuOpen = ref(false)
-const searchQuery = ref('')
+const showProfileMenu = ref(false) // 토글 메뉴 상태 변수
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -115,6 +123,7 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isMenuOpen.value = false
+  showProfileMenu.value = false // 모바일 메뉴 닫을 때 토글 메뉴도 닫기
 }
 
 const gotoMap = () => {
@@ -122,15 +131,26 @@ const gotoMap = () => {
   closeMenu()
 }
 
-const gotoProfile = () => {
-
+const handleProfileClick = () => {
   if (store.isLogin) {
-    router.push({ name: 'profile' });
+    showProfileMenu.value = !showProfileMenu.value
   } else {
-    router.push({ name : 'login'});
+    router.push({ name: 'login' })
+    closeMenu()
   }
 }
 
+const goToMyPage = () => {
+  showProfileMenu.value = false
+  closeMenu()
+  router.push({ name: 'profile' }) 
+}
+
+const handleLogout = () => {
+  showProfileMenu.value = false
+  closeMenu()
+  store.logOut()
+}
 </script>
 
 <style scoped>
@@ -372,6 +392,60 @@ const gotoProfile = () => {
   background: #f9fafb;
   border-color: #3b82f6;
   color: #3b82f6;
+}
+
+.profile-container {
+  position: relative;
+  display: inline-block;
+}
+
+.toggle-menu {
+  position: absolute;
+  width: 120px;
+  background-color: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-menu.desktop-pos {
+  top: 120%; 
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toggle-menu.mobile-pos {
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.menu-item {
+  padding: 12px 0;
+  border: none;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+  width: 100%;
+  text-align: center;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background-color: #f9f9f9;
+}
+
+.menu-item.logout {
+  color: #e74c3c;
 }
 
 @media (max-width: 1024px) {
