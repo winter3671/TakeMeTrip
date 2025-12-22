@@ -83,7 +83,6 @@ onMounted(async () => {
 
   // 2. 로그인 후 돌아왔을 때 주소창에 'code'가 있는지 확인
   if (route.query.code) {
-    console.log('인증 코드 발견:', route.query.code);
     await getKakaoToken(route.query.code);
   }
 });
@@ -116,7 +115,6 @@ const getKakaoToken = async (code) => {
     );
 
     const accessToken = response.data.access_token;
-    console.log('카카오 Access Token 발급 성공:', accessToken);
 
     await sendTokenToBackend(accessToken);
 
@@ -135,7 +133,6 @@ const sendTokenToBackend = async (accessToken) => {
       access_token: accessToken,
     });
     
-    console.log('서버 로그인 성공:', response.data);
     localStorage.setItem('accessToken', response.data.key || response.data.access);
     alert('로그인 되었습니다! 🎉');
     
