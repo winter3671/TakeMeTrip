@@ -7,22 +7,22 @@
         
         <div class="input-group">
           <label for="username">아이디</label>
-          <input type="text" id="username" v-model="username" placeholder="아이디를 입력하세요">
+          <input type="text" id="username" v-model.trim="username" placeholder="아이디를 입력하세요">
         </div>
 
         <div class="input-group">
           <label for="email">이메일</label>
-          <input type="email" id="email" v-model="email" placeholder="example@email.com">
+          <input type="email" id="email" v-model.trim="email" placeholder="example@email.com">
         </div>
 
         <div class="input-group">
           <label for="password">비밀번호</label>
-          <input type="password" id="password" v-model="password" placeholder="비밀번호">
+          <input type="password" id="password" v-model.trim="password" placeholder="비밀번호">
         </div>
 
         <div class="input-group">
           <label for="passwordConfirm">비밀번호 재입력</label>
-          <input type="password" id="passwordConfirm" v-model="passwordConfirm" placeholder="비밀번호 확인">
+          <input type="password" id="passwordConfirm" v-model.trim="passwordConfirm" placeholder="비밀번호 확인">
         </div>
 
         <button type="submit" class="signup-btn">회원가입</button>
@@ -33,6 +33,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAccountStore } from '@/stores/accounts';
+
+const store = useAccountStore()
 
 const username = ref('');
 const email = ref('');
@@ -40,7 +43,7 @@ const password = ref('');
 const passwordConfirm = ref('');
 
 const handleSignup = () => {
-  if (!username.value || !email.value || !password.value || !passwordConfirm.value) {
+  if (!username.value || !password.value || !passwordConfirm.value) {
     alert('모든 항목을 입력해주세요.');
     return;
   }
@@ -50,14 +53,20 @@ const handleSignup = () => {
     return;
   }
 
+  const payload = {
+    username: username.value,
+    email: email.value,
+    password1: password.value,
+    password2: passwordConfirm.value
+  };
+
+  store.signUp(payload)
+
   console.log('Signup attempt:', {
     username: username.value,
     email: email.value,
     password: password.value
   });
-  
-  // 추후 백엔드 API 호출 로직 위치
-  // alert('회원가입이 완료되었습니다!');
 };
 </script>
 
