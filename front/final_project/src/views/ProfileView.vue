@@ -177,7 +177,12 @@ const fetchData = async () => {
     console.error("찜 목록 로드 실패", e);
   }
 
-  myComments.value = []; 
+  try {
+    const comments = await communityStore.getMyComments();
+    myComments.value = comments;
+  } catch (e) {
+    console.error("내 댓글 로드 실패", e);
+  }
 };
 
 
