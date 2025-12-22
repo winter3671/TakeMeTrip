@@ -90,7 +90,12 @@ class MyWishlistView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Trip.objects.filter(wishlists__user=user).order_by('-wishlists__created_at')
+        return Trip.objects.filter(wishlists__user=user, status='active').order_by('-wishlists__created_at')
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
 # 카테고리 목록 
 @api_view(['GET'])
