@@ -1,6 +1,6 @@
 # back/planner/views.py
 import math
-import random # 🎲 랜덤 모듈 추가
+import random 
 from datetime import datetime, timedelta
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -36,7 +36,6 @@ class AIPlannerView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # 1. 입력값 검증
         serializer = PlannerInputSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
@@ -48,7 +47,6 @@ class AIPlannerView(APIView):
         duration = (data['end_date'] - start_date).days + 1
         user_loc = type('UserLoc', (), {'mapx': data['current_mapx'], 'mapy': data['current_mapy']})()
 
-        # 2. 데이터 조회
         all_places = Trip.objects.filter(
             region_id=data['region_id'], 
             city_id=data['city_id'],
@@ -59,20 +57,16 @@ class AIPlannerView(APIView):
 
         my_wish_ids = set(Wishlist.objects.filter(user=user).values_list('trip_id', flat=True))
 
-        # 3. 데이터 분류 및 점수 계산 (랜덤 노이즈 적용)
         pools = self._classify_and_score_places(all_places, my_wish_ids)
         
         if not pools['attractions']:
              return Response({"message": "관광지 데이터가 부족합니다."}, status=400)
 
-        # 4. 앵커 및 숙소 선정 (여기에도 다양성 적용)
         anchors = self._select_anchors(pools['attractions'], duration)
         best_accommodation = self._select_best_accommodation(anchors, pools['accommodations'], my_wish_ids)
 
-        # 5. 이동 시간 계산
         travel_time_minutes = self._calc_initial_travel_time(user_loc, anchors[0])
 
-        # 6. 스케줄 생성
         plan = self._generate_schedule(
             request, anchors, best_accommodation, pools, 
             start_date, duration, travel_time_minutes, 
@@ -91,17 +85,19 @@ class AIPlannerView(APIView):
     # --- Internal Logic Methods ---
 
     def _classify_and_score_places(self, places, wish_ids):
-        """category_id 분류 + 랜덤 노이즈 점수 적용"""
+        """초기 분류 및 점수 계산 (좋아요 반영 O, 조회수 X)"""
         pools = {'attractions': [], 'restaurants': [], 'accommodations': []}
 
         for trip in places:
             base_score = trip.recommendation_score if trip.recommendation_score else 50
             wish_bonus = 150 if trip.id in wish_ids else 0
             
-            # 🎲 [Variety 1] 랜덤 노이즈 추가 (-5 ~ +5점)
-            # 미세한 점수 차이를 뒤집어서 매번 순위가 조금씩 바뀌게 함
+            # 대중성 점수 (좋아요만 반영)
+            raw_popularity = trip.like_count * 2
+            popularity_bonus = min(raw_popularity, 60)
+            
             noise = random.uniform(-5, 5)
-            final_score = base_score + wish_bonus + noise
+            final_score = base_score + wish_bonus + popularity_bonus + noise
             
             item = {'trip': trip, 'score': final_score}
             
@@ -132,12 +128,8 @@ class AIPlannerView(APIView):
             remaining = [t for t in candidates if t.id not in used_ids]
             if not remaining: break
             
-            # 🎲 [Variety 2] 다음 앵커 선택 시 Top 3 중 랜덤 선택
-            # 무조건 가장 가까운 곳만 가지 않고, 조금 떨어져도 좋은 곳을 갈 수 있음
-            # 거리 기준으로 정렬
             remaining.sort(key=lambda x: calculate_distance(last_anchor, x))
             
-            # 상위 3개(혹은 남은 개수만큼) 중에서 하나 랜덤 픽
             top_k = remaining[:3]
             next_anchor = random.choice(top_k)
             
@@ -156,19 +148,22 @@ class AIPlannerView(APIView):
         avg_y = sum(float(a.mapy) for a in valid_anchors) / len(valid_anchors)
         centroid = type('Centroid', (), {'mapx': avg_x, 'mapy': avg_y})()
 
-        # 숙소도 점수 계산 후 Top 3 중 랜덤 추천 (선택 사항)
         candidates_with_score = []
         for acc in accommodations:
             p_base = acc.recommendation_score if acc.recommendation_score else 50
             p_wish = 150 if acc.id in wish_ids else 0
+            
+            raw_popularity = acc.like_count * 2
+            popularity_bonus = min(raw_popularity, 60)
+            
             dist = calculate_distance(centroid, acc)
             distance_penalty = dist * 2500 
-            final = (p_base + p_wish) - distance_penalty
+            
+            final = (p_base + p_wish + popularity_bonus) - distance_penalty
             candidates_with_score.append((acc, final))
         
         candidates_with_score.sort(key=lambda x: x[1], reverse=True)
         
-        # 상위 3개 숙소 중 하나 랜덤 반환
         top_k_accs = [item[0] for item in candidates_with_score[:3]]
         return random.choice(top_k_accs) if top_k_accs else None
 
@@ -289,7 +284,6 @@ class AIPlannerView(APIView):
         return plan
 
     def _find_best_nearby(self, current_place, pool, used_ids, wish_ids, date, is_restaurant=False, last_place=None):
-        """Top 5 가중치 선택 (Top 3 우대, Top 5까지 고려)"""
         candidates_with_score = []
 
         for potential in pool:
@@ -302,6 +296,9 @@ class AIPlannerView(APIView):
             p_base = potential.recommendation_score if potential.recommendation_score else 50
             p_wish = 150 if potential.id in wish_ids else 0
             
+            raw_popularity = potential.like_count * 2
+            popularity_bonus = min(raw_popularity, 60)
+
             dist = calculate_distance(current_place, potential)
             penalty_weight = 3000 if is_restaurant else 2000
             distance_penalty = dist * penalty_weight
@@ -313,31 +310,24 @@ class AIPlannerView(APIView):
                 if last_cat and curr_cat and last_cat == curr_cat:
                     variety_penalty = 80 
             
-            final_score = (p_base + p_wish) - distance_penalty - variety_penalty
+            final_score = (p_base + p_wish + popularity_bonus) - distance_penalty - variety_penalty
             
             candidates_with_score.append((potential, final_score))
         
-        # 점수순 정렬
         candidates_with_score.sort(key=lambda x: x[1], reverse=True)
         
-        # 🎲 [Variety 3.5] 가중치 랜덤 선택 (Weighted Random)
         if not candidates_with_score:
             return None
         
-        # 1. 상위 5개(Top-5) 후보 추출
         top_k = candidates_with_score[:5]
         
-        # 2. 가중치 부여 (Top 3는 10점, 4~5등은 2점)
-        # 예: [10, 10, 10, 2, 2] -> 1~3등이 뽑힐 확률이 5배 높음
         weights = []
         for i in range(len(top_k)):
-            if i < 3: # 0, 1, 2번째 (1~3등)
+            if i < 3: 
                 weights.append(10)
-            else:     # 3, 4번째 (4~5등)
+            else:     
                 weights.append(2)
         
-        # 3. 가중치를 적용하여 하나 선택
-        # random.choices는 리스트를 반환하므로 [0]으로 꺼냄
         selected_tuple = random.choices(top_k, weights=weights, k=1)[0]
         
         return selected_tuple[0]
