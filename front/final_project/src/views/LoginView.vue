@@ -60,48 +60,96 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { useTripStore } from '@/stores/trips';
 
 const store = useTripStore();
 const router = useRouter();
+const route = useRoute();
+
 const username = ref('');
 const password = ref('');
 
-const kakaoLogin = () => {
-  // 1. SDK 초기화 체크
-  if (!window.Kakao.isInitialized()) {
-    window.Kakao.init('여기에_본인의_JavaScript_키'); 
+const KAKAO_JS_KEY = 'dc32b2b8795a175bdf7de2093e10fa6e'; 
+
+const REST_API_KEY = 'ebf26955396890d8dc443a720747cd59';
+
+onMounted(async () => {
+  // 1. SDK 초기화 (init)
+  if (window.Kakao && !window.Kakao.isInitialized()) {
+    window.Kakao.init(KAKAO_JS_KEY);
   }
 
-  // 2. 리다이렉트 방식 로그인 (authorize 사용)
+  // 2. 로그인 후 돌아왔을 때 주소창에 'code'가 있는지 확인
+  if (route.query.code) {
+    console.log('인증 코드 발견:', route.query.code);
+    await getKakaoToken(route.query.code);
+  }
+});
+
+// 3. 버튼 클릭 시: 카카오 로그인 페이지로 이동 (authorize 사용)
+const kakaoLogin = () => {
   window.Kakao.Auth.authorize({
-    redirectUri: 'http://localhost:5173/login', // 로그인 후 다시 돌아올 주소
+    redirectUri: 'http://localhost:5173/login', 
   });
+};
+
+// 4. 인증 코드로 토큰 교환 (REST API 사용)
+const getKakaoToken = async (code) => {
+  try {
+    const data = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: REST_API_KEY,
+      redirect_uri: 'http://localhost:5173/login',
+      code: code,
+    });
+
+    const response = await axios.post(
+      'https://kauth.kakao.com/oauth/token',
+      data,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+        },
+      }
+    );
+
+    const accessToken = response.data.access_token;
+    console.log('카카오 Access Token 발급 성공:', accessToken);
+
+    await sendTokenToBackend(accessToken);
+
+  } catch (error) {
+    console.error('토큰 교환 실패:', error);
+    if (error.response) {
+       console.error('응답 데이터:', error.response.data);
+    }
+    alert('카카오 로그인 중 오류가 발생했습니다.');
+  }
 };
 
 const sendTokenToBackend = async (accessToken) => {
   try {
-    const response = await axios.post('http://127.0.0.1:8000/users/kakao/login/', {
+    const response = await axios.post('http://127.0.0.1:8000/api/auth/social/kakao/login/', {
       access_token: accessToken,
     });
+    
     console.log('서버 로그인 성공:', response.data);
     localStorage.setItem('accessToken', response.data.key || response.data.access);
-    alert('로그인 성공!');
-    router.push('/'); 
+    alert('로그인 되었습니다! 🎉');
+    
+    router.replace('/'); 
+
   } catch (error) {
-    console.error('서버 에러:', error);
+    console.error('백엔드 로그인 에러:', error);
     alert('서버 로그인 실패');
   }
 };
 
-// onMounted에서는 초기화만 시도 (필수 아님, 위에서 버튼 클릭 시 체크하므로 안전함)
-onMounted(() => {
-  if (window.Kakao && !window.Kakao.isInitialized()) {
-    window.Kakao.init('자바 스크립트 키');
-  }
-});
+const handleLogin = () => {
+  console.log('일반 로그인 시도');
+};
 </script>
 
 <style scoped>
