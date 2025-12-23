@@ -1,4 +1,3 @@
-# back/planner/views.py
 import math
 import random 
 from datetime import datetime, timedelta
@@ -8,7 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from trips.models import Trip, Wishlist
 from trips.serializers import TripListSerializer
-from .serializers import PlannerInputSerializer
+from .serializers import PlannerInputSerializer, CourseSerializer
+from .models import Course, CourseDetail
 
 # --- Helper Functions (Static) ---
 
@@ -357,3 +357,39 @@ class AIPlannerView(APIView):
             item["status"] = status_or_time 
             item["time"] = time_obj.strftime("%H:%M")
         return item
+    
+class CourseSaveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        user = request.user
+
+        course = Course.objects.create(
+            user=user,
+            title=data.get('title', f"{user.username}님의 여행 코스"),
+            region=data.get('region', ''),
+            start_date=data.get('start_date', datetime.today()), # 날짜 형식 주의
+            end_date=data.get('end_date', datetime.today())
+        )
+
+        # 프론트엔드에서 AI 결과('plan')를 그대로 보내준다고 가정
+        plans = data.get('plan', [])
+        
+        for day_plan in plans:
+            day = day_plan.get('day')
+            schedule = day_plan.get('schedule', [])
+            
+            for idx, item in enumerate(schedule):
+                # 여행지(spot)나 식당(meal)인 경우에만 저장 (숙소나 이동 시간 등은 제외 가능)
+                if item.get('type') in ['spot', 'meal', 'accommodation']:
+                    trip_data = item.get('data')
+                    if trip_data and 'id' in trip_data:
+                        CourseDetail.objects.create(
+                            course=course,
+                            trip_id=trip_data['id'],
+                            day=day,
+                            order=idx
+                        )
+
+        return Response(CourseSerializer(course).data, status=201)

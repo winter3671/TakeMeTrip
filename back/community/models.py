@@ -5,6 +5,8 @@ class Article(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='articles')
     title = models.CharField(max_length=100)
     content = models.TextField()
+    image = models.ImageField(upload_to='article_images/', blank=True, null=True)
+    course = models.ForeignKey('planner.Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='shared_articles')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     hits = models.PositiveIntegerField(default=0)
