@@ -13,6 +13,8 @@ import { useAccountStore } from '@/stores/accounts'
 import SocialCallback from '@/views/SocialCallback.vue'
 import AIPlannerView from '@/views/AIPlannerView.vue'
 import ArticleUpdateView from '@/views/ArticleUpdateView.vue'
+import TripDetailView from '@/views/TripDetailView.vue'
+import TripSearchView from '@/views/TripSearchView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,6 +35,11 @@ const router = createRouter({
       component: AIPlannerView
     },
     {
+      path: '/trips/:id', 
+      name: 'trip-detail',
+      component: TripDetailView
+    },
+    {
       path: '/information',
       name: 'information',
       component: InformationView
@@ -46,6 +53,11 @@ const router = createRouter({
       path: '/map',
       name: 'map',
       component: MapView
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: TripSearchView
     },
     {
       path: '/profile',

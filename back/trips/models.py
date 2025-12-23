@@ -69,7 +69,13 @@ class Trip(models.Model):
     mapx = models.FloatField(default=0.0) # 경도
     mapy = models.FloatField(default=0.0) # 위도
 
-    rest_date = models.CharField(max_length=100, blank=True, null=True)
+    overview = models.TextField(blank=True, null=True, verbose_name="상세 설명")
+    tel = models.CharField(max_length=100, blank=True, null=True, verbose_name="연락처")
+    homepage = models.TextField(blank=True, null=True, verbose_name="홈페이지")
+
+    parking = models.CharField(max_length=500, blank=True, null=True, verbose_name="주차시설")
+    rest_date = models.CharField(max_length=500, blank=True, null=True, verbose_name="휴무일")
+    use_time = models.CharField(max_length=500, blank=True, null=True, verbose_name="이용시간")
 
     class Meta:
         db_table = 'trips'

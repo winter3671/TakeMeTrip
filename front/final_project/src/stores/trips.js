@@ -12,6 +12,8 @@ export const useTripStore = defineStore('trip', () => {
   const totalCount = ref(0)    // ★ 전체 게시글 수 (페이지네이션용)
   const categories = ref([])
 
+  const tripDetail = ref(null) // 상세 정보
+
   // 1. 여행지 목록 조회 (필터링, 페이징 포함) - ★ 복구된 함수
   const getTrips = async (params) => {
     try {
@@ -162,6 +164,17 @@ const getMyCourses = async () => {
   }
 }
 
+  const getTripDetail = async (id) => {
+    try {
+      // id를 이용해 백엔드(/api/trips/123/)에 요청
+      const res = await axios.get(`${API_URL}/${id}/`)
+      tripDetail.value = res.data
+    } catch (error) {
+      console.error('상세 정보 로드 실패:', error)
+      tripDetail.value = null
+    }
+  }
+
   return { 
     trips, 
     totalCount, 
@@ -173,6 +186,8 @@ const getMyCourses = async () => {
     getMyWishlist,
     toggleLike,
     getAiRecommendations,
-    getMyCourses
+    getMyCourses,
+    tripDetail,
+    getTripDetail
   }
 })
