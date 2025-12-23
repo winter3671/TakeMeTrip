@@ -11,7 +11,7 @@
         </div>
 
         <div class="input-group">
-          <label for="email">이메일</label>
+          <label for="email">이메일 (선택)</label>
           <input type="email" id="email" v-model.trim="email" placeholder="example@email.com">
         </div>
 
@@ -46,7 +46,7 @@ const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
 
-const handleSignup = () => {
+const handleSignup = async () => {
   if (!username.value || !password.value || !passwordConfirm.value) {
     alert('모든 항목을 입력해주세요.');
     return;
@@ -64,13 +64,23 @@ const handleSignup = () => {
     password2: passwordConfirm.value
   };
 
-  store.signUp(payload)
+  try {
+    await store.signUp(payload);
+  } catch (error) {
 
-  console.log('Signup attempt:', {
-    username: username.value,
-    email: email.value,
-    password: password.value
-  });
+    if (error.response && error.response.data) {
+      const data = error.response.data;
+
+      if (data.username) {
+        alert('이미 존재하는 아이디입니다.');
+      } else {
+        alert('회원가입 중 오류가 발생했습니다.');
+      }
+    } else {
+      console.error(error);
+      alert('서버 오류가 발생했습니다.');
+    }
+  }
 };
 </script>
 

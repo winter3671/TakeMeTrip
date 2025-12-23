@@ -80,7 +80,7 @@ const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID
 
 const CALLBACK_URI = 'http://localhost:5173/auth/callback';
 
-const handleLogin = function () {
+const handleLogin = async function () {
   if (!username.value || !password.value) {
     alert('아이디와 비밀번호를 모두 입력해주세요.');
     return;
@@ -91,7 +91,28 @@ const handleLogin = function () {
     password: password.value
   };
 
-  accountStore.logIn(payload);
+  try {
+    await accountStore.logIn(payload);
+  } catch (error) {
+    console.error('로그인 에러:', error);
+
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+
+      if (status === 400) {
+        if (data.non_field_errors) {
+           alert('아이디 또는 비밀번호가 올바르지 않습니다.');
+        } else {
+           alert('로그인 정보를 다시 확인해주세요.');
+        }
+      } else {
+        alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    } else {
+      alert('네트워크 오류가 발생했습니다.');
+    }
+  }
 };
 
 onMounted(async () => {
