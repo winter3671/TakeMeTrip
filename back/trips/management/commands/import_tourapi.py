@@ -17,6 +17,96 @@ class Command(BaseCommand):
             help='Area code (If empty, imports ALL regions)',
         )
 
+    # 공통 정보 (개요, 홈페이지, 전화번호)
+    def get_detail_common(self, content_id, api_key):
+        url = "https://apis.data.go.kr/B551011/KorService2/detailCommon2"
+        params = {
+            "serviceKey": api_key,
+            "MobileOS": "ETC",
+            "MobileApp": "TMT",
+            "_type": "json",
+            "contentId": content_id,
+        }
+        try:
+            res = requests.get(url, params=params).json()
+            items = res.get("response", {}).get("body", {}).get("items", {})
+            
+            if not items: return {}
+            
+            item = items.get("item")
+            data = {}
+            
+            if isinstance(item, list) and len(item) > 0:
+                data = item[0]
+            elif isinstance(item, dict):
+                data = item
+                
+            return data 
+            
+        except:
+            return {}
+
+    def get_detail_intro(self, content_id, content_type_id, api_key):
+        url = "https://apis.data.go.kr/B551011/KorService2/detailIntro2"
+        params = {
+            "serviceKey": api_key,
+            "MobileOS": "ETC",
+            "MobileApp": "TMT",
+            "_type": "json",
+            "contentId": content_id,
+            "contentTypeId": content_type_id
+        }
+        
+        try:
+            res = requests.get(url, params=params).json()
+            items = res.get("response", {}).get("body", {}).get("items", {})
+            
+            if not items: return {}
+
+            item = items.get("item")
+            data = {}
+            if isinstance(item, list) and len(item) > 0:
+                data = item[0]
+            elif isinstance(item, dict):
+                data = item
+            
+            # 전화번호(infocenter) 및 기타 정보 파싱
+            infocenter = (
+                data.get('infocenter') or 
+                data.get('infocenterfood') or 
+                data.get('infocenterlodging') or
+                data.get('infocentershopping') or
+                data.get('infocenterculture') or
+                data.get('infocenterleports') or ''
+            )
+
+            parking = (
+                data.get('parking') or data.get('parkingfood') or 
+                data.get('parkinglodging') or data.get('parkingshopping') or 
+                data.get('parkingculture') or data.get('parkingleports') or ''
+            )
+            
+            rest_date = (
+                data.get('restdate') or data.get('restdatefood') or 
+                data.get('restdateshopping') or data.get('restdateculture') or 
+                data.get('restdateleports') or ''
+            )
+            
+            use_time = (
+                data.get('usetime') or data.get('opentimefood') or 
+                data.get('opentime') or data.get('usetimeculture') or 
+                data.get('usetimeleports') or ''
+            )
+            
+            return {
+                'infocenter': infocenter,
+                'parking': parking,
+                'rest_date': rest_date,
+                'use_time': use_time
+            }
+        except:
+            return {}
+        
     def handle(self, *args, **options):
         raw_key = config('TOUR_API_KEY')
         API_KEY = unquote(raw_key)
@@ -154,6 +244,15 @@ class Command(BaseCommand):
             start_date = self.parse_date(item.get('eventstartdate'))
             end_date = self.parse_date(item.get('eventenddate'))
 
+            api_key = unquote(config('TOUR_API_KEY'))
+
+            content_id = item.get('contentid')
+            content_type_id = item.get('contenttypeid')
+
+            common_data = self.get_detail_common(content_id, api_key)
+
+            intro_data = self.get_detail_intro(content_id, content_type_id, api_key)
+
             trip, created = Trip.objects.update_or_create(
                 external_id=item['contentid'],
                 defaults={
@@ -172,8 +271,14 @@ class Command(BaseCommand):
                     'end_date': end_date,
                     'mapx': float(item.get('mapx', 0.0) or 0.0), # 경도
                     'mapy': float(item.get('mapy', 0.0) or 0.0), # 위도
-                }
-            )
+                    'overview': common_data.get('overview', ''),
+                    'tel': common_data.get('tel') or intro_data.get('infocenter') or '',
+                    'homepage': common_data.get('homepage', ''),
+                    'parking': intro_data.get('parking', ''),
+                    'rest_date': intro_data.get('rest_date', ''),
+                    'use_time': intro_data.get('use_time', ''),
+                    }
+                )
             
             self.create_tags(trip, item)
 

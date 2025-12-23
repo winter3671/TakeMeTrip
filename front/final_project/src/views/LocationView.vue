@@ -30,6 +30,7 @@
             :key="trip.id" 
             :trip="trip"
             :userLocation="userLocation"
+            @click="goDetail(trip.id)"
           />
         </div>
       </div>
@@ -141,7 +142,10 @@
 <script setup>
 import LocationCard from '@/components/LocationCard.vue';
 import { useTripStore } from '@/stores/trips';
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
 
 const store = useTripStore()
 const isLoading = ref(false)
@@ -326,6 +330,10 @@ const resetFilters = () => {
   selectedCategoryTag.value = null;
   currentPage.value = 1;
   loadData(1);
+}
+
+const goDetail = (id) => {
+  router.push({ name: 'trip-detail', params: { id } })
 }
 
 onMounted(() => {

@@ -131,6 +131,9 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useTripStore } from '@/stores/trips';
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const tripStore = useTripStore();
 

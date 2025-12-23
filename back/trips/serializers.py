@@ -42,16 +42,28 @@ class TripDetailSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     images = TripImageSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
-        fields = '__all__'
+        fields = [
+            'id', 'title', 'destination', 'thumbnail_image', 
+            'region_name', 'city_name', 'category_name', 
+            'recommendation_score', 'mapx', 'mapy', 'is_liked',
+            'images', 'tags',
+            'overview', 'tel', 'homepage', 
+            'parking', 'rest_date', 'use_time',
+        ]
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.wishlists.filter(user=request.user).exists()
         return False
+    
+    def get_tags(self, obj):
+        # trip.triptag_set.all()로 연결된 태그들을 모두 가져와서 이름만 리스트로 반환
+        return [item.tag.name for item in obj.triptag_set.all()]
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

@@ -13,6 +13,7 @@ import { useAccountStore } from '@/stores/accounts'
 import SocialCallback from '@/views/SocialCallback.vue'
 import AIPlannerView from '@/views/AIPlannerView.vue'
 import ArticleUpdateView from '@/views/ArticleUpdateView.vue'
+import TripDetailView from '@/views/TripDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,6 +32,11 @@ const router = createRouter({
       path: '/planner',
       name: 'planner',
       component: AIPlannerView
+    },
+    {
+      path: '/trips/:id', 
+      name: 'trip-detail',
+      component: TripDetailView
     },
     {
       path: '/information',

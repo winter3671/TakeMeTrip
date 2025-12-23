@@ -34,6 +34,7 @@
             v-for="trip in store.trips" 
             :key="trip.id" 
             class="festival-card"
+            @click="goDetail(trip.id)"
           >
             <div class="card-thumb">
               <img :src="trip.thumbnail_image || '/src/assets/no_image.png'" :alt="trip.title" />
@@ -100,6 +101,9 @@
 <script setup>
 import { useTripStore } from '@/stores/trips';
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const store = useTripStore();
 const isLoading = ref(false);
@@ -196,6 +200,10 @@ const handleDistrictChange = () => {
   currentPage.value = 1;
   fetchFestivals();
 };
+
+const goDetail = (id) => {
+  router.push({ name: 'trip-detail', params: { id } })
+}
 
 onMounted(() => {
   fetchFestivals();
