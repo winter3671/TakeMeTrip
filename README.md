@@ -84,7 +84,7 @@
 
 ## 📂 프로젝트 구조 (Directory Structure)
 
-```python
+```text
 TMT/
 ├── back/
 │   ├── community/       # 게시글, 댓글, 좋아요 및 여행 코스 첨부 로직
