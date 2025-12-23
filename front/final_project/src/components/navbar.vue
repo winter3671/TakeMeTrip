@@ -24,7 +24,11 @@
             <RouterLink :to="{ name: 'home' }" class="nav-link"><span>홈</span></RouterLink>
             <RouterLink :to="{ name: 'information' }" class="nav-link"><span>여행정보</span></RouterLink>
             <RouterLink :to="{ name: 'location' }" class="nav-link"><span>여행지역</span></RouterLink>
-            <RouterLink :to="{ name: 'course' }" class="nav-link"><span>여행코스</span></RouterLink>
+            
+            <a href="#" @click.prevent="goPlanner" class="nav-link" :class="{ 'router-link-active': $route.name === 'planner' }">
+              <span>AI플래너</span>
+            </a>
+
             <RouterLink :to="{ name: 'community' }" class="nav-link"><span>커뮤니티</span></RouterLink>
           </div>
           
@@ -67,7 +71,9 @@
           <RouterLink :to="{ name: 'home' }" class="mobile-nav-link" @click="closeMenu">홈</RouterLink>
           <RouterLink :to="{ name: 'information' }" class="mobile-nav-link" @click="closeMenu">여행정보</RouterLink>
           <RouterLink :to="{ name: 'location' }" class="mobile-nav-link" @click="closeMenu">여행지역</RouterLink>
-          <RouterLink :to="{ name: 'course' }" class="mobile-nav-link" @click="closeMenu">여행코스</RouterLink>
+          
+          <a href="#" @click.prevent="goPlanner" class="mobile-nav-link">AI플래너</a>
+
           <RouterLink :to="{ name: 'community' }" class="mobile-nav-link" @click="closeMenu">커뮤니티</RouterLink>
           
           <div class="mobile-icon-menu">
@@ -108,14 +114,13 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-// 파일 경로가 'stores/account.js'인지 'stores/accounts.js'인지 정확히 확인해주세요.
 import { useAccountStore } from '@/stores/accounts' 
 
 const store = useAccountStore()
 const router = useRouter()
 
 const isMenuOpen = ref(false)
-const showProfileMenu = ref(false) // 토글 메뉴 상태 변수
+const showProfileMenu = ref(false)
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -123,11 +128,21 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isMenuOpen.value = false
-  showProfileMenu.value = false // 모바일 메뉴 닫을 때 토글 메뉴도 닫기
+  showProfileMenu.value = false
 }
 
 const gotoMap = () => {
   router.push({ name: 'map' })
+  closeMenu()
+}
+
+const goPlanner = () => {
+  if (!store.isLogin) {
+    alert('로그인이 필요합니다.')
+    router.push({ name: 'login' })
+  } else {
+    router.push({ name: 'planner' })
+  }
   closeMenu()
 }
 

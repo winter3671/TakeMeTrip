@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Course, CourseDetail
 from trips.serializers import TripListSerializer
+from trips.models import Region, City
 
 class PlannerInputSerializer(serializers.Serializer):
     start_date = serializers.DateField()
@@ -30,3 +31,13 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id', 'title', 'region', 'start_date', 'end_date', 'created_at', 'details']
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ['id', 'name']
+
+class RegionSerializer(serializers.ModelSerializer):
+    cities = CitySerializer(many=True, read_only=True)
+    class Meta:
+        model = Region
+        fields = ['id', 'name', 'cities']

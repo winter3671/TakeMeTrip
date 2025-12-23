@@ -1,7 +1,6 @@
 import ArticleCreateView from '@/views/ArticleCreateView.vue'
 import ArticleDetailView from '@/views/ArticleDetailView.vue'
 import CommunityView from '@/views/CommunityView.vue'
-import CourseView from '@/views/CourseView.vue'
 import HomeView from '@/views/HomeView.vue'
 import InformationView from '@/views/InformationView.vue'
 import LocationView from '@/views/LocationView.vue'
@@ -12,6 +11,7 @@ import SignUpView from '@/views/SignUpView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAccountStore } from '@/stores/accounts'
 import SocialCallback from '@/views/SocialCallback.vue'
+import AIPlannerView from '@/views/AIPlannerView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,9 +27,9 @@ const router = createRouter({
       component: CommunityView
     },
     {
-      path: '/course',
-      name: 'course',
-      component: CourseView
+      path: '/planner',
+      name: 'planner',
+      component: AIPlannerView
     },
     {
       path: '/information',
