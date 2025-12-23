@@ -5,7 +5,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.db.models import Q
 from .models import Article, Comment
-from .serializers import ArticleListSerializer, ArticleDetailSerializer, CommentSerializer
+from .serializers import ArticleListSerializer, ArticleDetailSerializer, CommentSerializer, ArticleCreateSerializer
 
 # 게시글 목록 조회 & 생성 
 @api_view(['GET', 'POST'])
@@ -37,7 +37,7 @@ def article_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = ArticleDetailSerializer(data=request.data)
+        serializer = ArticleCreateSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)

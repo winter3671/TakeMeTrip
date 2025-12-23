@@ -44,11 +44,29 @@
         </select>
       </div>
       
-      <div v-if="courseId" class="course-attachment">
-        <p>🚩 <strong>선택된 코스:</strong> {{ getSelectedCourseTitle() }}</p>
-      </div>
-
-      <div class="btn-group">
+      <div v-if="selectedCourse" class="selected-course-preview">
+        <div class="preview-header">
+          <span class="preview-badge">선택된 코스</span>
+          <span class="preview-title">{{ selectedCourse.title }}</span>
+        </div>
+        <div class="preview-info">
+          📍 {{ selectedCourse.region }} | 📅 {{ selectedCourse.start_date }} ~ {{ selectedCourse.end_date }}
+        </div>
+        
+        <div class="preview-itinerary" v-if="selectedCourse.details && selectedCourse.details.length > 0">
+          <div v-for="(spots, day) in groupedDetails" :key="day" class="day-row">
+            <div class="day-label">Day {{ day }}</div>
+            
+            <div class="day-spots">
+              <span v-for="(detail, idx) in spots" :key="detail.id" class="spot-item">
+                {{ detail.trip_name || (detail.trip ? detail.trip.title : '여행지') }}
+                
+                <span v-if="idx < spots.length - 1" class="arrow">→</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div> <div class="btn-group">
         <button type="button" class="cancel-btn" @click="goBack">취소</button>
         <button type="submit" class="submit-btn">등록하기</button>
       </div>
@@ -57,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAccountStore } from '@/stores/accounts'
 import { useCommunityStore } from '@/stores/community';
@@ -75,6 +93,28 @@ const courseId = ref(null);
 const myCourses = ref([]);
 
 const API_URL = 'http://127.0.0.1:8000';
+
+const selectedCourse = computed(() => {
+  return myCourses.value.find(c => c.id === courseId.value);
+});
+
+const groupedDetails = computed(() => {
+  if (!selectedCourse.value || !selectedCourse.value.details) return {};
+
+  const groups = {};
+  selectedCourse.value.details.forEach(detail => {
+    const day = detail.day;
+    if (!groups[day]) {
+      groups[day] = [];
+    }
+    groups[day].push(detail);
+  });
+  
+  return Object.keys(groups).sort().reduce((acc, key) => {
+    acc[key] = groups[key];
+    return acc;
+  }, {});
+});
 
 onMounted(async () => {
   try {
@@ -159,6 +199,18 @@ const goBack = () => {
   border: 1px solid #bbdefb;
   margin-top: -10px; /* form-group과의 간격 조절 */
 }
+
+.selected-course-preview {
+  margin-top: 10px;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  padding: 15px;
+}
+.preview-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.preview-badge { background-color: #2196f3; color: white; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+.preview-title { font-weight: bold; color: #1565c0; font-size: 16px; }
+.preview-info { font-size: 14px; color: #555; margin-bottom: 10px; }
 
 .create-container {
   max-width: 800px;
@@ -263,5 +315,58 @@ const goBack = () => {
   }
 }
 
+.preview-itinerary {
+  margin-top: 15px;
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e1f5fe;
+}
 
+.day-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #eee;
+}
+
+.day-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.day-label {
+  background-color: #7B9DFF;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  margin-right: 15px;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+}
+
+.day-spots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.spot-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.arrow {
+  color: #bbb;
+  margin: 0 6px;
+  font-size: 12px;
+}
 </style>
