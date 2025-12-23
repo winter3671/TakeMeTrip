@@ -1,0 +1,1043 @@
+[
+{
+  "model": "community.article",
+  "pk": 1,
+  "fields": {
+    "user": 2,
+    "title": "아이들이 되게 좋아해요!!",
+    "content": "청계천 불빛 축제를 갔다 왔는데 정말 예뻤고, 같이 간 아이들이 정말 좋아하더라구요!!\r\n다음에 또 이런 축제가 있다면 애들 데리고 데려갈려구요 ㅎㅎ",
+    "image": "article_images/2F18D3FD-F06D-45E8-9EF6-258F710E7828.jpg",
+    "course": null,
+    "created_at": "2025-12-23T07:10:40.651Z",
+    "updated_at": "2025-12-23T07:41:52.589Z",
+    "hits": 7,
+    "like_users": [
+      3,
+      4,
+      11
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 2,
+  "fields": {
+    "user": 3,
+    "title": "나만 알고 싶은 TMT~",
+    "content": "새해를 맞이해 여자친구랑 놀려고 하는데 막상 갈만한 곳이 없더라구요.\r\n그래서 AI 플래너에서 계획을 짜달라고 부탁했는데 야무지게 계획을 짜주고 이걸 여자친구한테 어떻게 이렇게 잘 짤 수 있냐고 칭찬을 받았어요!!\r\n당분간 이 사이트 좀 애용해야겠어용~",
+    "image": "",
+    "course": 1,
+    "created_at": "2025-12-23T07:19:20.960Z",
+    "updated_at": "2025-12-23T07:27:11.443Z",
+    "hits": 5,
+    "like_users": [
+      2,
+      4
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 3,
+  "fields": {
+    "user": 4,
+    "title": "이게 뭐에요??",
+    "content": "진짜 뭐지..?",
+    "image": "article_images/idontknow.png",
+    "course": null,
+    "created_at": "2025-12-23T07:23:47.182Z",
+    "updated_at": "2025-12-23T07:41:37.395Z",
+    "hits": 8,
+    "like_users": [
+      5,
+      11
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 4,
+  "fields": {
+    "user": 5,
+    "title": "맛있다!!!!!!!",
+    "content": "AI가 짜준 코스를 토대로 음식점에 갔었는데 되게 맛있더라구요\r\n믿고 쓸만한듯",
+    "image": "",
+    "course": null,
+    "created_at": "2025-12-23T07:25:32.615Z",
+    "updated_at": "2025-12-23T07:36:44.225Z",
+    "hits": 10,
+    "like_users": [
+      2,
+      6
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 5,
+  "fields": {
+    "user": 6,
+    "title": "저랑 크리스마스 때 놀아주실 분..",
+    "content": "올해 솔크라 심심할 거 같은데 저랑 놀아주실 분 계신가요..?",
+    "image": "",
+    "course": 2,
+    "created_at": "2025-12-23T07:28:43.231Z",
+    "updated_at": "2025-12-23T07:37:04.422Z",
+    "hits": 10,
+    "like_users": []
+  }
+},
+{
+  "model": "community.article",
+  "pk": 6,
+  "fields": {
+    "user": 7,
+    "title": "저메추",
+    "content": "제곧내",
+    "image": "",
+    "course": null,
+    "created_at": "2025-12-23T07:30:28.255Z",
+    "updated_at": "2025-12-23T07:33:20.337Z",
+    "hits": 6,
+    "like_users": [
+      8
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 7,
+  "fields": {
+    "user": 8,
+    "title": "우리 같이 홀려볼까요?",
+    "content": ".",
+    "image": "article_images/fox.jpg",
+    "course": null,
+    "created_at": "2025-12-23T07:33:02.989Z",
+    "updated_at": "2025-12-23T07:51:59.744Z",
+    "hits": 7,
+    "like_users": [
+      2,
+      10,
+      11,
+      12,
+      13
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 8,
+  "fields": {
+    "user": 9,
+    "title": "님들님들 진짜 큰일이 일어남!!",
+    "content": "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ",
+    "image": "article_images/bigone.png",
+    "course": null,
+    "created_at": "2025-12-23T07:35:03.298Z",
+    "updated_at": "2025-12-23T07:45:56.061Z",
+    "hits": 10,
+    "like_users": [
+      4,
+      13
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 9,
+  "fields": {
+    "user": 6,
+    "title": "진짜..",
+    "content": "아니 진짜로 놀아줄 사람 없음..?",
+    "image": "",
+    "course": null,
+    "created_at": "2025-12-23T07:36:17.278Z",
+    "updated_at": "2025-12-23T07:53:13.049Z",
+    "hits": 6,
+    "like_users": [
+      3
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 10,
+  "fields": {
+    "user": 10,
+    "title": "맛집 다녀왔어요",
+    "content": "AI가 추천한 장소를 믿고 한 번 가봤는데 맛있더라구요!!\r\n정말 좋은 사이트 같아용",
+    "image": "article_images/food.jpg",
+    "course": null,
+    "created_at": "2025-12-23T07:38:20.744Z",
+    "updated_at": "2025-12-23T07:45:39.026Z",
+    "hits": 7,
+    "like_users": [
+      7,
+      11,
+      12,
+      13
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 11,
+  "fields": {
+    "user": 11,
+    "title": "되게 신기해용",
+    "content": "제가 군산에 사는데 근처에 맛집을 모르고 있었는데 이 사이트 덕분에 식당 어디 갈지 고민이 어느정도 해결된 거 같아용",
+    "image": "article_images/스크린샷_2025-12-23_164017.png",
+    "course": null,
+    "created_at": "2025-12-23T07:41:15.978Z",
+    "updated_at": "2025-12-23T07:51:45.943Z",
+    "hits": 3,
+    "like_users": [
+      10,
+      11,
+      12
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 12,
+  "fields": {
+    "user": 12,
+    "title": "예카 최고!!",
+    "content": "제가 카페를 좋아하는데 이 사이트를 통해 카페도 좀 찾아봐야겠네요",
+    "image": "",
+    "course": null,
+    "created_at": "2025-12-23T07:43:18.404Z",
+    "updated_at": "2025-12-23T07:51:57.450Z",
+    "hits": 10,
+    "like_users": [
+      6,
+      14
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 13,
+  "fields": {
+    "user": 13,
+    "title": "떠나요~",
+    "content": "제주도~\r\n덕분에 플랜 잘 짜갑니당",
+    "image": "",
+    "course": 3,
+    "created_at": "2025-12-23T07:45:25.876Z",
+    "updated_at": "2025-12-23T07:50:12.465Z",
+    "hits": 3,
+    "like_users": [
+      12
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 14,
+  "fields": {
+    "user": 14,
+    "title": "flex",
+    "content": "추천한 곳으로 플렉스 하러 가볼게여~ 갱갱갱",
+    "image": "article_images/스크린샷_2025-12-23_164628.png",
+    "course": null,
+    "created_at": "2025-12-23T07:47:24.071Z",
+    "updated_at": "2025-12-23T07:51:35.729Z",
+    "hits": 5,
+    "like_users": [
+      2,
+      4,
+      10
+    ]
+  }
+},
+{
+  "model": "community.article",
+  "pk": 15,
+  "fields": {
+    "user": 15,
+    "title": "mic test",
+    "content": "다들 관통 화이팅입니다!",
+    "image": "article_images/fighting.jpg",
+    "course": null,
+    "created_at": "2025-12-23T07:49:11.125Z",
+    "updated_at": "2025-12-23T07:53:09.589Z",
+    "hits": 19,
+    "like_users": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 1,
+  "fields": {
+    "article": 1,
+    "user": 3,
+    "content": "다음에 저두 데이트 하러 가야겠네요 ㅎㅎ",
+    "created_at": "2025-12-23T07:11:33.234Z",
+    "updated_at": "2025-12-23T07:11:33.234Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 2,
+  "fields": {
+    "article": 2,
+    "user": 2,
+    "content": "오오 저도 계획 짜기 귀찮을 때 써봐야겠네용 ㅎㅎ",
+    "created_at": "2025-12-23T07:19:51.915Z",
+    "updated_at": "2025-12-23T07:19:51.915Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 3,
+  "fields": {
+    "article": 3,
+    "user": 5,
+    "content": "??",
+    "created_at": "2025-12-23T07:24:39.738Z",
+    "updated_at": "2025-12-23T07:24:39.738Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 4,
+  "fields": {
+    "article": 4,
+    "user": 4,
+    "content": "머먹?",
+    "created_at": "2025-12-23T07:25:59.799Z",
+    "updated_at": "2025-12-23T07:25:59.799Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 5,
+  "fields": {
+    "article": 4,
+    "user": 2,
+    "content": "맛집 공유좀요",
+    "created_at": "2025-12-23T07:26:13.285Z",
+    "updated_at": "2025-12-23T07:26:13.285Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 6,
+  "fields": {
+    "article": 4,
+    "user": 6,
+    "content": "뭐 먹으셨나요??",
+    "created_at": "2025-12-23T07:27:08.054Z",
+    "updated_at": "2025-12-23T07:27:08.054Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 7,
+  "fields": {
+    "article": 3,
+    "user": 6,
+    "content": "???",
+    "created_at": "2025-12-23T07:27:17.311Z",
+    "updated_at": "2025-12-23T07:27:17.311Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 8,
+  "fields": {
+    "article": 5,
+    "user": 4,
+    "content": "혼자 놀아라",
+    "created_at": "2025-12-23T07:29:03.599Z",
+    "updated_at": "2025-12-23T07:29:03.599Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 9,
+  "fields": {
+    "article": 5,
+    "user": 3,
+    "content": "난 커플인데 ㅋ",
+    "created_at": "2025-12-23T07:29:32.862Z",
+    "updated_at": "2025-12-23T07:29:32.862Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 10,
+  "fields": {
+    "article": 4,
+    "user": 7,
+    "content": "저메추좀요",
+    "created_at": "2025-12-23T07:30:40.542Z",
+    "updated_at": "2025-12-23T07:30:40.542Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 11,
+  "fields": {
+    "article": 6,
+    "user": 6,
+    "content": "저랑 술??",
+    "created_at": "2025-12-23T07:31:08.232Z",
+    "updated_at": "2025-12-23T07:31:08.232Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 12,
+  "fields": {
+    "article": 5,
+    "user": 6,
+    "content": ";;",
+    "created_at": "2025-12-23T07:31:14.478Z",
+    "updated_at": "2025-12-23T07:31:14.478Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 13,
+  "fields": {
+    "article": 6,
+    "user": 8,
+    "content": "그대의 입술..?",
+    "created_at": "2025-12-23T07:32:18.805Z",
+    "updated_at": "2025-12-23T07:32:18.805Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 14,
+  "fields": {
+    "article": 6,
+    "user": 2,
+    "content": "국밥?",
+    "created_at": "2025-12-23T07:33:20.325Z",
+    "updated_at": "2025-12-23T07:33:20.325Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 15,
+  "fields": {
+    "article": 3,
+    "user": 8,
+    "content": "????",
+    "created_at": "2025-12-23T07:35:28.454Z",
+    "updated_at": "2025-12-23T07:35:28.454Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 16,
+  "fields": {
+    "article": 8,
+    "user": 8,
+    "content": "에휴",
+    "created_at": "2025-12-23T07:35:36.255Z",
+    "updated_at": "2025-12-23T07:35:36.255Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 17,
+  "fields": {
+    "article": 8,
+    "user": 4,
+    "content": "진짜 머지",
+    "created_at": "2025-12-23T07:35:51.821Z",
+    "updated_at": "2025-12-23T07:35:51.821Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 18,
+  "fields": {
+    "article": 9,
+    "user": 3,
+    "content": "없는듯 ㅇㅇ",
+    "created_at": "2025-12-23T07:36:39.318Z",
+    "updated_at": "2025-12-23T07:36:39.318Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 19,
+  "fields": {
+    "article": 9,
+    "user": 4,
+    "content": "혼자 놀라고;;",
+    "created_at": "2025-12-23T07:36:58.333Z",
+    "updated_at": "2025-12-23T07:36:58.333Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 20,
+  "fields": {
+    "article": 10,
+    "user": 7,
+    "content": "와 오늘 메뉴 이거다",
+    "created_at": "2025-12-23T07:38:45.958Z",
+    "updated_at": "2025-12-23T07:38:45.958Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 21,
+  "fields": {
+    "article": 10,
+    "user": 11,
+    "content": "와..",
+    "created_at": "2025-12-23T07:41:20.365Z",
+    "updated_at": "2025-12-23T07:41:20.365Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 22,
+  "fields": {
+    "article": 3,
+    "user": 11,
+    "content": "?????",
+    "created_at": "2025-12-23T07:41:37.381Z",
+    "updated_at": "2025-12-23T07:41:37.381Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 23,
+  "fields": {
+    "article": 1,
+    "user": 11,
+    "content": "우와!! 되게 예뻐용",
+    "created_at": "2025-12-23T07:41:52.572Z",
+    "updated_at": "2025-12-23T07:41:52.572Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 24,
+  "fields": {
+    "article": 10,
+    "user": 12,
+    "content": "허억.. 여기가 어딘가요??",
+    "created_at": "2025-12-23T07:43:37.844Z",
+    "updated_at": "2025-12-23T07:43:37.844Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 25,
+  "fields": {
+    "article": 8,
+    "user": 12,
+    "content": ";;",
+    "created_at": "2025-12-23T07:43:47.321Z",
+    "updated_at": "2025-12-23T07:43:47.321Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 26,
+  "fields": {
+    "article": 12,
+    "user": 6,
+    "content": "혹시 저랑 같이 카페.. 가실래요..?",
+    "created_at": "2025-12-23T07:44:18.261Z",
+    "updated_at": "2025-12-23T07:44:18.261Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 27,
+  "fields": {
+    "article": 12,
+    "user": 12,
+    "content": "싫어요 ㅎ",
+    "created_at": "2025-12-23T07:44:33.525Z",
+    "updated_at": "2025-12-23T07:44:33.525Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 28,
+  "fields": {
+    "article": 8,
+    "user": 13,
+    "content": "ㅌㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ",
+    "created_at": "2025-12-23T07:45:56.044Z",
+    "updated_at": "2025-12-23T07:45:56.044Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 29,
+  "fields": {
+    "article": 12,
+    "user": 14,
+    "content": "hey girl~ 나랑 같이 갈래?",
+    "created_at": "2025-12-23T07:47:34.643Z",
+    "updated_at": "2025-12-23T07:47:34.643Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 30,
+  "fields": {
+    "article": 14,
+    "user": 4,
+    "content": "찐임?",
+    "created_at": "2025-12-23T07:47:53.085Z",
+    "updated_at": "2025-12-23T07:47:53.085Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 31,
+  "fields": {
+    "article": 14,
+    "user": 2,
+    "content": "찐?",
+    "created_at": "2025-12-23T07:48:05.428Z",
+    "updated_at": "2025-12-23T07:48:05.428Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 32,
+  "fields": {
+    "article": 15,
+    "user": 14,
+    "content": "ay you good luck guys",
+    "created_at": "2025-12-23T07:49:41.587Z",
+    "updated_at": "2025-12-23T07:49:41.587Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 33,
+  "fields": {
+    "article": 15,
+    "user": 12,
+    "content": "홧팅이에용",
+    "created_at": "2025-12-23T07:50:02.489Z",
+    "updated_at": "2025-12-23T07:50:02.489Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 34,
+  "fields": {
+    "article": 12,
+    "user": 12,
+    "content": "진짜 싫어;;",
+    "created_at": "2025-12-23T07:50:09.603Z",
+    "updated_at": "2025-12-23T07:50:09.603Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 35,
+  "fields": {
+    "article": 15,
+    "user": 13,
+    "content": "홧팅",
+    "created_at": "2025-12-23T07:50:30.611Z",
+    "updated_at": "2025-12-23T07:50:30.611Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 36,
+  "fields": {
+    "article": 15,
+    "user": 11,
+    "content": "화이팅!!!",
+    "created_at": "2025-12-23T07:50:50.355Z",
+    "updated_at": "2025-12-23T07:50:50.355Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 37,
+  "fields": {
+    "article": 15,
+    "user": 4,
+    "content": "화이팅입니다요",
+    "created_at": "2025-12-23T07:51:12.474Z",
+    "updated_at": "2025-12-23T07:51:12.474Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 38,
+  "fields": {
+    "article": 15,
+    "user": 10,
+    "content": "화이팅",
+    "created_at": "2025-12-23T07:51:34.152Z",
+    "updated_at": "2025-12-23T07:51:34.152Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 39,
+  "fields": {
+    "article": 12,
+    "user": 10,
+    "content": "내가 제일 정상이네",
+    "created_at": "2025-12-23T07:51:57.434Z",
+    "updated_at": "2025-12-23T07:51:57.434Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 40,
+  "fields": {
+    "article": 15,
+    "user": 6,
+    "content": "화티잉",
+    "created_at": "2025-12-23T07:52:21.969Z",
+    "updated_at": "2025-12-23T07:52:21.969Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 41,
+  "fields": {
+    "article": 15,
+    "user": 8,
+    "content": "다들 할 수 있다아",
+    "created_at": "2025-12-23T07:52:52.458Z",
+    "updated_at": "2025-12-23T07:52:52.458Z"
+  }
+},
+{
+  "model": "community.comment",
+  "pk": 42,
+  "fields": {
+    "article": 15,
+    "user": 2,
+    "content": "굿",
+    "created_at": "2025-12-23T07:53:09.580Z",
+    "updated_at": "2025-12-23T07:53:09.580Z"
+  }
+},
+{
+  "model": "users.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$qnGbffvHlWWyuXX2b3WLPu$oU5oxzt/itFvwbFn3BitxyNfCgdiiDi5tFOcgp97C5g=",
+    "last_login": "2025-12-23T06:24:28.033Z",
+    "is_superuser": false,
+    "username": "user1",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T06:24:27.380Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 2,
+  "fields": {
+    "password": "!2YLOru0Zw1RtQ83NNBDlKl7PWH6cYCA1ynQ09pmm",
+    "last_login": "2025-12-23T07:53:02.717Z",
+    "is_superuser": false,
+    "username": "민재",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T06:35:00.050Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$NnlVV4qW5UobZux6lF2zWL$tw/ACRsrPKoMxZFHjolGFkT2arhE4vao1yvc8Cprhxc=",
+    "last_login": "2025-12-23T07:11:12.782Z",
+    "is_superuser": false,
+    "username": "wjdgnsoppa",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:11:12.126Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bAyZdAbG52scJjrzl6RGBP$6muXgBOADkR8+WZjvAhmY+Jnc8s+QSCSAZORnDTe70A=",
+    "last_login": "2025-12-23T07:20:27.148Z",
+    "is_superuser": false,
+    "username": "gangyeon",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:20:26.487Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$aB6vCxAUhXsw9leLfMkBPQ$79qdEjF5uW0rDJ0TJ+AbFggCboHEfiDD7hOMHkijg1Y=",
+    "last_login": "2025-12-23T07:24:27.134Z",
+    "is_superuser": false,
+    "username": "hansomeguy",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:24:26.480Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$mFe6bb0cByT88cWxVJTe3E$tIHLCLPzDNWUoCGILJhDNMEGaALBghHL+SHQM2UwhmU=",
+    "last_login": "2025-12-23T07:26:55.253Z",
+    "is_superuser": false,
+    "username": "youyouyou",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:26:54.591Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$xIQf1MzRC3iXmp78DlRT6h$2DTLSOaAsV1Cta3uOZ0D+KW8rVNnahDzuOZhVnPKaxw=",
+    "last_login": "2025-12-23T07:29:56.828Z",
+    "is_superuser": false,
+    "username": "suminjjang",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:29:56.167Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 8,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$1U2wR9KuvVvbviQYEcnkMN$W/Oz4i5tOuAlweQWkpLSVu6Zb/SonPK8/BVsRagDcKE=",
+    "last_login": "2025-12-23T07:31:52.173Z",
+    "is_superuser": false,
+    "username": "foxinho",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:31:51.502Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 9,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$ugCFSIu7DGBt9o8FAKdINb$mHB+n1YddtjL5bC8boL0DrWugqDipFiZ4Q5GmmsicRc=",
+    "last_login": "2025-12-23T07:33:57.481Z",
+    "is_superuser": false,
+    "username": "kingjinuk",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:33:56.821Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 10,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$Ad9muhHssv9VaK7Dm9pM57$sNRjOAHWGELBGaCsUrxMBXKKtlIJVr71YZfuKIgOoW0=",
+    "last_login": "2025-12-23T07:37:25.178Z",
+    "is_superuser": false,
+    "username": "jungsang",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:37:24.508Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 11,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$DxhHS22yaq2vdtrLRsh7Jt$7MyLkn3bWeu3afX8jYlQBIGtMy8gCeh2IImaNt3n9DM=",
+    "last_login": "2025-12-23T07:39:30.213Z",
+    "is_superuser": false,
+    "username": "iambobbygirl",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:39:29.555Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 12,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$TdQNhuaX0c1cMoA98GslSM$vL9Q1nkcuaAclc135jurs7iEXnpb7r4yZp1TwLSDABs=",
+    "last_login": "2025-12-23T07:42:41.254Z",
+    "is_superuser": false,
+    "username": "givemecoffee",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:42:40.588Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 13,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$pLX82SGnKGRZH0rCAWQngS$lAFrJst1jF6AMkGj7PJUtbUY4tS3R0xD8Sic66HKfkw=",
+    "last_login": "2025-12-23T07:44:47.097Z",
+    "is_superuser": false,
+    "username": "bigbrother",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:44:46.452Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 14,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$FC0baGo0WkGli0yF5N5nDO$dNgCGXsujlAzy2veZpeLqs0aMs1Hx9vA3s85t5FRddA=",
+    "last_login": "2025-12-23T07:46:14.861Z",
+    "is_superuser": false,
+    "username": "giriboy",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:46:14.187Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "pk": 15,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$OePjG3t7mB6TTF3Mcg7G3i$/gfKvgLCfoa1hf+vAGl5OnsOQvN9T8BFAAKLfrBzGeM=",
+    "last_login": "2025-12-23T07:48:26.931Z",
+    "is_superuser": false,
+    "username": "viktor",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-12-23T07:48:26.284Z",
+    "user_type": "user",
+    "profile_image": "",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]
