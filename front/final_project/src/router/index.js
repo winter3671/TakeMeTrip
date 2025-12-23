@@ -14,6 +14,7 @@ import SocialCallback from '@/views/SocialCallback.vue'
 import AIPlannerView from '@/views/AIPlannerView.vue'
 import ArticleUpdateView from '@/views/ArticleUpdateView.vue'
 import TripDetailView from '@/views/TripDetailView.vue'
+import TripSearchView from '@/views/TripSearchView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,6 +53,11 @@ const router = createRouter({
       path: '/map',
       name: 'map',
       component: MapView
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: TripSearchView
     },
     {
       path: '/profile',

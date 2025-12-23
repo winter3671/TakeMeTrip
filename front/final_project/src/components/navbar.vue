@@ -11,8 +11,10 @@
             type="text" 
             class="search-input" 
             placeholder="검색어를 입력하세요."
+            v-model="keyword" 
+            @keyup.enter="onSearch"
           >
-          <button class="search-btn">
+          <button class="search-btn" @click="onSearch">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
             </svg>
@@ -116,8 +118,22 @@ import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAccountStore } from '@/stores/accounts' 
 
+const keyword = ref('')
+
 const store = useAccountStore()
 const router = useRouter()
+
+const onSearch = () => {
+  if (!keyword.value.trim()) {
+    alert('검색어를 입력해주세요!')
+    return
+  }
+  
+  router.push({ 
+    name: 'search', 
+    query: { search: keyword.value } 
+  })
+}
 
 const isMenuOpen = ref(false)
 const showProfileMenu = ref(false)

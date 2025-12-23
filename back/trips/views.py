@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, F, FloatField, ExpressionWrapper, Count
 from django_filters.rest_framework import DjangoFilterBackend
 from collections import Counter
@@ -14,16 +15,23 @@ from .models import Trip, Wishlist, Category
 from .serializers import TripListSerializer, TripDetailSerializer, CategorySerializer, PlannerCourseSerializer
 from planner.models import Course as PlannerCourse, CourseDetail
 
+class TripPagination(PageNumberPagination):
+    page_size = 10 
+    page_size_query_param = 'page_size'  
+    max_page_size = 150 
+
 # 여행지 목록 조회 (필터링, 검색, 정렬 포함)
 class TripListView(ListAPIView):
     serializer_class = TripListSerializer
-    
+    pagination_class = TripPagination
+
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'overview', 'destination']
     ordering_fields = ['recommendation_score', 'created_at']
 
     def get_queryset(self):
         queryset = Trip.objects.filter(status='active')
+        queryset = queryset.annotate(total_likes=Count('wishlists'))
 
         area_name = self.request.query_params.get('area', None)
         category_id = self.request.query_params.get('category', None)
@@ -46,7 +54,6 @@ class TripListView(ListAPIView):
             try:
                 current_lat = float(lat)
                 current_lon = float(lon)
-
                 queryset = queryset.annotate(
                     distance_diff=ExpressionWrapper(
                         (F('mapy') - current_lat) ** 2 + (F('mapx') - current_lon) ** 2,
@@ -54,12 +61,13 @@ class TripListView(ListAPIView):
                     )
                 ).order_by('distance_diff')
             except ValueError:
-                queryset = queryset.order_by('-created_at')
+                queryset = queryset.order_by('-total_likes', '-recommendation_score')
 
         elif ordering_param:
             queryset = queryset.order_by(ordering_param)
         else:
-            queryset = queryset.order_by('-recommendation_score')
+            # 1순위: 좋아요순, 2순위: 추천점수순, 3순위: 그래도 같으면 랜덤
+            queryset = queryset.order_by('-total_likes', '-recommendation_score', '?')
 
         return queryset
 
