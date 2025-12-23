@@ -1,6 +1,7 @@
 <template>
   <div class="profile-container">
     
+    <!-- 프로필 헤더 -->
     <div class="profile-header">
       <div class="profile-avatar">
         <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="#7B9DFF" viewBox="0 0 16 16">
@@ -14,6 +15,7 @@
       </div>
     </div>
 
+    <!-- 탭 버튼 -->
     <div class="profile-tabs">
       <button 
         class="tab-btn" 
@@ -45,12 +47,21 @@
       </button>
     </div>
 
+    <!-- 탭 컨텐츠 -->
     <div class="tab-content">
       
+      <!-- 내가 쓴 글 -->
       <div v-if="activeTab === 'articles'" class="content-section">
-        <div v-if="myArticles.length === 0" class="no-data">작성한 게시글이 없습니다.</div>
+        <div v-if="myArticles.length === 0" class="no-data">
+          작성한 게시글이 없습니다.
+        </div>
         <ul v-else class="list-group">
-          <li v-for="article in myArticles" :key="article.id" class="list-item" @click="goToArticle(article.id)">
+          <li 
+            v-for="article in myArticles" 
+            :key="article.id" 
+            class="list-item" 
+            @click="goToArticle(article.id)"
+          >
             <div class="item-main">
               <span class="item-title">{{ article.title }}</span>
               <span class="item-date">{{ formatDate(article.created_at) }}</span>
@@ -63,10 +74,18 @@
         </ul>
       </div>
 
+      <!-- 내가 쓴 댓글 -->
       <div v-if="activeTab === 'comments'" class="content-section">
-        <div v-if="myComments.length === 0" class="no-data">작성한 댓글이 없습니다.</div>
+        <div v-if="myComments.length === 0" class="no-data">
+          작성한 댓글이 없습니다.
+        </div>
         <ul v-else class="list-group">
-          <li v-for="comment in myComments" :key="comment.id" class="list-item" @click="goToArticle(comment.article)">
+          <li 
+            v-for="comment in myComments" 
+            :key="comment.id" 
+            class="list-item" 
+            @click="goToArticle(comment.article)"
+          >
             <div class="item-main">
               <span class="item-text">{{ comment.content }}</span>
               <span class="item-date">{{ formatDate(comment.created_at) }}</span>
@@ -78,6 +97,7 @@
         </ul>
       </div>
 
+      <!-- 찜한 여행지 -->
       <div v-if="activeTab === 'wishlist'" class="content-section">
         <div v-if="myWishlist.length === 0" class="no-data">
           찜한 여행지가 없습니다. <br> 마음에 드는 곳에 하트(❤️)를 눌러보세요!
@@ -86,10 +106,14 @@
           <div class="card-grid">
             <div 
               v-for="trip in paginatedWishlist" 
-              :key="trip.id" 
+              :key="trip?.id" 
               class="card-item"
             >
-              <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
+              <img 
+                :src="trip.thumbnail_image || noImage" 
+                alt="여행지" 
+                class="card-img" 
+              />
               <button 
                 class="heart-btn active" 
                 @click.stop="handleToggleLike(trip)"
@@ -104,34 +128,96 @@
               </div>
             </div>
           </div>
+
+          <!-- 페이지네이션 -->
           <div class="pagination" v-if="totalPages > 1">
-            <button class="page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">&lt;</button>
-            <button v-for="page in totalPages" :key="page" class="page-btn" :class="{ active: currentPage === page }" @click="changePage(page)">{{ page }}</button>
-            <button class="page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">&gt;</button>
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === 1" 
+              @click="changePage(currentPage - 1)"
+            >
+              &lt;
+            </button>
+            <button 
+              v-for="page in totalPages" 
+              :key="page" 
+              class="page-btn" 
+              :class="{ active: currentPage === page }" 
+              @click="changePage(page)"
+            >
+              {{ page }}
+            </button>
+            <button 
+              class="page-btn" 
+              :disabled="currentPage === totalPages" 
+              @click="changePage(currentPage + 1)"
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>
 
+      <!-- 내 여행 경로 -->
       <div v-if="activeTab === 'courses'" class="content-section">
         <div v-if="!myCourses || myCourses.length === 0" class="no-data">
           저장된 여행 경로가 없습니다. <br> AI 플래너로 나만의 여행을 만들어보세요!
         </div>
+        
         <ul v-else class="list-group">
           <li 
             v-for="course in myCourses" 
             :key="course.id" 
-            class="list-item course-item" 
-            @click="goToCourseDetail(course.id)"
+            class="list-item course-item"
+            :class="{ 'expanded': expandedCourseId === course.id }"
           >
-            <div class="item-main">
-              <span class="course-title">🗺️ {{ course.title || '제목 없음' }}</span>
-              <span class="item-date">
-                생성일: {{ course.created_at ? formatDate(course.created_at) : '-' }}
-              </span>
+            <!-- 코스 헤더 (클릭 가능) -->
+            <div class="course-header" @click="toggleCourse(course.id)">
+              <div class="item-main">
+                <span class="course-title">
+                  🗺️ {{ course.title || '제목 없음' }}
+                </span>
+                <span class="item-date">
+                  생성일: {{ course.created_at ? formatDate(course.created_at) : '-' }}
+                </span>
+              </div>
+              <div class="item-sub">
+                <span v-if="expandedCourseId === course.id">접기 ▲</span>
+                <span v-else>상세보기 ▼</span>
+              </div>
             </div>
-            <div class="item-sub">
-              <span>{{ course.details ? course.details.length : 0 }}개의 장소</span>
-              <span>상세보기 &gt;</span>
+
+            <!-- 코스 상세 정보 (아코디언) -->
+            <div v-if="expandedCourseId === course.id" class="course-details">
+              <div class="detail-info">
+                <p><strong>📅 기간:</strong> {{ course.start_date || '미정' }} ~ {{ course.end_date || '미정' }}</p>
+                <p><strong>📍 지역:</strong> {{ course.region || '전체' }}</p>
+              </div>
+
+              <div class="path-timeline">
+                <p class="path-title">📌 여행 경로</p>
+                <div v-if="course.details && course.details.length > 0">
+                  <div 
+                    v-for="(place, idx) in course.details" 
+                    :key="idx" 
+                    class="path-item"
+                    @click.stop="goToTripDetail(place.trip.id)" 
+                  >
+                    <div class="path-order">
+                      {{ place.day }}일차
+                    </div>
+                    <div class="path-content">
+                      <span class="path-name">{{ place.trip.title }}</span>
+                      <span class="path-loc">
+                        {{ place.trip.region_name }} {{ place.trip.city_name }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="no-path">
+                  경로 정보가 없습니다.
+                </div>
+              </div>
             </div>
           </li>
         </ul>
@@ -159,16 +245,17 @@ const myArticles = ref([]);
 const myComments = ref([]);
 const myWishlist = ref([]);
 const myCourses = ref([]);
+const expandedCourseId = ref(null);
 
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
-const totalPages = computed(() => Math.ceil(myWishlist.value.length / itemsPerPage));
+const totalPages = computed(() => {
+  return Math.ceil(myWishlist.value.length / itemsPerPage);
+});
 
 const paginatedWishlist = computed(() => {
-  if (!myWishlist.value || myWishlist.value.length === 0) {
-    return [];
-  }
+  if (!myWishlist.value || myWishlist.value.length === 0) return [];
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
   return myWishlist.value.slice(start, end).filter(trip => trip && trip.id);
@@ -194,6 +281,14 @@ const handleToggleLike = async (trip) => {
   }
 };
 
+const toggleCourse = (courseId) => {
+  if (expandedCourseId.value === courseId) {
+    expandedCourseId.value = null;
+  } else {
+    expandedCourseId.value = courseId;
+  }
+};
+
 const fetchData = async () => {
   if (!accountStore.isLogin) {
     alert("로그인이 필요합니다.");
@@ -201,44 +296,37 @@ const fetchData = async () => {
     return;
   }
 
-  // 1. 내 글
+  // 내 글
   try {
     const params = { condition: 'author', search: accountStore.user.username };
     await communityStore.getArticles(params);
     myArticles.value = communityStore.articles || [];
   } catch (e) { 
-    console.error("내 글 로드 실패", e); 
-    myArticles.value = [];
+    myArticles.value = []; 
   }
 
-  // 2. 찜 목록
+  // 찜 목록
   try {
     const wishes = await tripStore.getMyWishlist();
     myWishlist.value = Array.isArray(wishes) ? wishes.filter(w => w && w.id) : [];
   } catch (e) { 
-    console.error("찜 목록 로드 실패", e); 
-    myWishlist.value = [];
+    myWishlist.value = []; 
   }
 
-  // 3. 내 댓글
+  // 내 댓글
   try {
     const comments = await communityStore.getMyComments();
     myComments.value = Array.isArray(comments) ? comments : [];
   } catch (e) { 
-    console.error("내 댓글 로드 실패", e); 
-    myComments.value = [];
+    myComments.value = []; 
   }
 
-  // 4. 내 여행 경로
+  // 내 여행 경로
   try {
     const courses = await tripStore.getMyCourses();
     myCourses.value = Array.isArray(courses) ? courses.filter(c => c && c.id) : [];
-    
-    if (myCourses.value.length > 0) {
-    }
   } catch (e) { 
-    console.error("코스 목록 로드 실패", e); 
-    myCourses.value = [];
+    myCourses.value = []; 
   }
 };
 
@@ -256,17 +344,12 @@ onMounted(async () => {
   await fetchData();
 });
 
-const goToArticle = (id) => router.push({ name: 'article-detail', params: { id } });
-const goToTripDetail = (id) => router.push({ name: 'detail', params: { id } });
+const goToArticle = (id) => {
+  router.push({ name: 'article-detail', params: { id } });
+};
 
-const goToCourseDetail = (id) => {
-  if (!id) {
-    console.error('잘못된 코스 ID:', id);
-    alert('코스 정보를 찾을 수 없습니다.');
-    return;
-  }
-  
-  alert(`코스 ID ${id}의 상세 페이지로 이동합니다.\n(상세 페이지는 아직 구현 전입니다.)`);
+const goToTripDetail = (id) => {
+  router.push({ name: 'detail', params: { id } });
 };
 
 const formatDate = (dateString) => {
@@ -275,6 +358,7 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
+/* ========== 레이아웃 ========== */
 .profile-container {
   max-width: 1000px;
   margin: 40px auto;
@@ -282,6 +366,7 @@ const formatDate = (dateString) => {
   min-height: 80vh;
 }
 
+/* ========== 프로필 헤더 ========== */
 .profile-header {
   display: flex;
   align-items: center;
@@ -289,7 +374,7 @@ const formatDate = (dateString) => {
   padding: 30px;
   background-color: white;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   margin-bottom: 30px;
 }
 
@@ -316,12 +401,15 @@ const formatDate = (dateString) => {
   margin: 0;
 }
 
+/* ========== 탭 ========== */
 .profile-tabs {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
   border-bottom: 2px solid #eee;
   padding-bottom: 10px;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .tab-btn {
@@ -346,6 +434,7 @@ const formatDate = (dateString) => {
   color: white;
 }
 
+/* ========== 컨텐츠 섹션 ========== */
 .content-section {
   min-height: 300px;
 }
@@ -359,6 +448,7 @@ const formatDate = (dateString) => {
   border-radius: 12px;
 }
 
+/* ========== 리스트 ========== */
 .list-group {
   list-style: none;
   padding: 0;
@@ -366,13 +456,10 @@ const formatDate = (dateString) => {
 }
 
 .list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
+  display: block;
+  padding: 0;
   border-bottom: 1px solid #eee;
   background-color: white;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 
@@ -380,7 +467,16 @@ const formatDate = (dateString) => {
   border-top: 1px solid #eee;
 }
 
-.list-item:hover {
+/* 일반 리스트 아이템 (글, 댓글) */
+.list-item:not(.course-item) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  cursor: pointer;
+}
+
+.list-item:not(.course-item):hover {
   background-color: #f8f9fa;
 }
 
@@ -406,23 +502,122 @@ const formatDate = (dateString) => {
   color: #999;
 }
 
-.item-meta, .item-sub {
+.item-meta,
+.item-sub {
   font-size: 13px;
   color: #888;
   display: flex;
   gap: 10px;
 }
 
-.course-title { 
-  font-size: 16px; 
-  font-weight: 700; 
-  color: #2c3e50; 
+/* ========== 코스 아이템 (아코디언) ========== */
+.course-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
 }
 
-.course-item:hover { 
-  background-color: #f0f8ff; 
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  cursor: pointer;
 }
 
+.course-header:hover {
+  background-color: #f8f9fa;
+}
+
+.course-details {
+  padding: 20px;
+  background-color: #f9faff;
+  border-top: 1px dashed #e0e0e0;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail-info {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #555;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.detail-info p {
+  margin: 5px 0;
+}
+
+.path-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 15px;
+}
+
+.path-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.path-item:hover {
+  border-color: #7B9DFF;
+}
+
+.path-order {
+  background-color: #7B9DFF;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin-right: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.path-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.path-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.path-loc {
+  font-size: 12px;
+  color: #888;
+}
+
+.no-path {
+  color: #999;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ========== 찜 카드 그리드 ========== */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -436,7 +631,7 @@ const formatDate = (dateString) => {
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -466,7 +661,7 @@ const formatDate = (dateString) => {
   left: 0;
   width: 100%;
   padding: 20px 15px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
   color: white;
 }
 
@@ -485,6 +680,7 @@ const formatDate = (dateString) => {
   margin: 0;
 }
 
+/* ========== 페이지네이션 ========== */
 .pagination {
   display: flex;
   justify-content: center;
@@ -526,21 +722,21 @@ const formatDate = (dateString) => {
   cursor: not-allowed;
 }
 
+/* ========== 반응형 ========== */
 @media (max-width: 1024px) {
-  .card-grid { grid-template-columns: repeat(3, 1fr); }
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .card-grid { grid-template-columns: repeat(2, 1fr); }
-  
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .profile-header {
     flex-direction: column;
     text-align: center;
-  }
-  
-  .profile-tabs {
-    overflow-x: auto;
-    white-space: nowrap;
   }
 }
 </style>
