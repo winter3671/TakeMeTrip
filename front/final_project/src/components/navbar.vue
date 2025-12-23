@@ -24,7 +24,7 @@
             <RouterLink :to="{ name: 'home' }" class="nav-link"><span>홈</span></RouterLink>
             <RouterLink :to="{ name: 'information' }" class="nav-link"><span>여행정보</span></RouterLink>
             <RouterLink :to="{ name: 'location' }" class="nav-link"><span>여행지역</span></RouterLink>
-            <RouterLink :to="{ name: 'course' }" class="nav-link"><span>여행코스</span></RouterLink>
+            <RouterLink :to="{ name: 'planner' }" class="nav-link"><span>AI플래너</span></RouterLink>
             <RouterLink :to="{ name: 'community' }" class="nav-link"><span>커뮤니티</span></RouterLink>
           </div>
           
@@ -67,7 +67,7 @@
           <RouterLink :to="{ name: 'home' }" class="mobile-nav-link" @click="closeMenu">홈</RouterLink>
           <RouterLink :to="{ name: 'information' }" class="mobile-nav-link" @click="closeMenu">여행정보</RouterLink>
           <RouterLink :to="{ name: 'location' }" class="mobile-nav-link" @click="closeMenu">여행지역</RouterLink>
-          <RouterLink :to="{ name: 'course' }" class="mobile-nav-link" @click="closeMenu">여행코스</RouterLink>
+          <RouterLink :to="{ name: 'planner' }" class="mobile-nav-link" @click="closeMenu">AI플래너</RouterLink>
           <RouterLink :to="{ name: 'community' }" class="mobile-nav-link" @click="closeMenu">커뮤니티</RouterLink>
           
           <div class="mobile-icon-menu">

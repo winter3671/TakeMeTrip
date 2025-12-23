@@ -6,9 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from trips.models import Trip, Wishlist
+from trips.models import Trip, Wishlist, Region
 from trips.serializers import TripListSerializer
-from .serializers import PlannerInputSerializer
+from .serializers import PlannerInputSerializer, RegionSerializer
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 # --- Helper Functions (Static) ---
 
@@ -31,6 +34,12 @@ def calculate_move_time_minutes(dist_coord):
     hours = km / 40 
     return int(hours * 60) 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_region_list(request):
+    regions = Region.objects.prefetch_related('cities').all()
+    serializer = RegionSerializer(regions, many=True)
+    return Response(serializer.data)
 
 class AIPlannerView(APIView):
     permission_classes = [IsAuthenticated]
@@ -357,3 +366,4 @@ class AIPlannerView(APIView):
             item["status"] = status_or_time 
             item["time"] = time_obj.strftime("%H:%M")
         return item
+    

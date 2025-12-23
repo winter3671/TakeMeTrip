@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from trips.models import Region, City
 
 class PlannerInputSerializer(serializers.Serializer):
     start_date = serializers.DateField()
@@ -14,3 +15,14 @@ class PlannerInputSerializer(serializers.Serializer):
         if data['start_date'] > data['end_date']:
             raise serializers.ValidationError("종료일은 시작일보다 빠를 수 없습니다.")
         return data
+    
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ['id', 'name']
+
+class RegionSerializer(serializers.ModelSerializer):
+    cities = CitySerializer(many=True, read_only=True)
+    class Meta:
+        model = Region
+        fields = ['id', 'name', 'cities']
