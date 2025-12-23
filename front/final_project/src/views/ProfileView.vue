@@ -1,7 +1,6 @@
 <template>
   <div class="profile-container">
     
-    <!-- 프로필 헤더 -->
     <div class="profile-header">
       <div class="profile-avatar">
         <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="#7B9DFF" viewBox="0 0 16 16">
@@ -15,7 +14,6 @@
       </div>
     </div>
 
-    <!-- 탭 버튼 -->
     <div class="profile-tabs">
       <button 
         class="tab-btn" 
@@ -47,10 +45,8 @@
       </button>
     </div>
 
-    <!-- 탭 컨텐츠 -->
     <div class="tab-content">
       
-      <!-- 내가 쓴 글 -->
       <div v-if="activeTab === 'articles'" class="content-section">
         <div v-if="myArticles.length === 0" class="no-data">
           작성한 게시글이 없습니다.
@@ -74,7 +70,6 @@
         </ul>
       </div>
 
-      <!-- 내가 쓴 댓글 -->
       <div v-if="activeTab === 'comments'" class="content-section">
         <div v-if="myComments.length === 0" class="no-data">
           작성한 댓글이 없습니다.
@@ -97,7 +92,6 @@
         </ul>
       </div>
 
-      <!-- 찜한 여행지 -->
       <div v-if="activeTab === 'wishlist'" class="content-section">
         <div v-if="myWishlist.length === 0" class="no-data">
           찜한 여행지가 없습니다. <br> 마음에 드는 곳에 하트(❤️)를 눌러보세요!
@@ -129,7 +123,6 @@
             </div>
           </div>
 
-          <!-- 페이지네이션 -->
           <div class="pagination" v-if="totalPages > 1">
             <button 
               class="page-btn" 
@@ -158,7 +151,6 @@
         </div>
       </div>
 
-      <!-- 내 여행 경로 -->
       <div v-if="activeTab === 'courses'" class="content-section">
         <div v-if="!myCourses || myCourses.length === 0" class="no-data">
           저장된 여행 경로가 없습니다. <br> AI 플래너로 나만의 여행을 만들어보세요!
@@ -171,7 +163,6 @@
             class="list-item course-item"
             :class="{ 'expanded': expandedCourseId === course.id }"
           >
-            <!-- 코스 헤더 (클릭 가능) -->
             <div class="course-header" @click="toggleCourse(course.id)">
               <div class="item-main">
                 <span class="course-title">
@@ -187,7 +178,6 @@
               </div>
             </div>
 
-            <!-- 코스 상세 정보 (아코디언) -->
             <div v-if="expandedCourseId === course.id" class="course-details">
               <div class="detail-info">
                 <p><strong>📅 기간:</strong> {{ course.start_date || '미정' }} ~ {{ course.end_date || '미정' }}</p>
@@ -196,21 +186,32 @@
 
               <div class="path-timeline">
                 <p class="path-title">📌 여행 경로</p>
+                
                 <div v-if="course.details && course.details.length > 0">
                   <div 
-                    v-for="(place, idx) in course.details" 
-                    :key="idx" 
-                    class="path-item"
-                    @click.stop="goToTripDetail(place.trip.id)" 
+                    v-for="(items, day) in groupDetailsByDay(course.details)" 
+                    :key="day" 
+                    class="day-group"
                   >
-                    <div class="path-order">
-                      {{ place.day }}일차
+                    <div class="day-header">
+                      <span class="day-badge">Day {{ day }}</span>
                     </div>
-                    <div class="path-content">
-                      <span class="path-name">{{ place.trip.title }}</span>
-                      <span class="path-loc">
-                        {{ place.trip.region_name }} {{ place.trip.city_name }}
-                      </span>
+
+                    <div class="day-places">
+                      <div 
+                        v-for="(place, idx) in items" 
+                        :key="place.id" 
+                        class="path-item simple"
+                        @click.stop="goToTripDetail(place.trip.id)" 
+                      >
+                        <div class="order-circle">{{ idx + 1 }}</div>
+                        <div class="path-content">
+                          <span class="path-name">{{ place.trip.title }}</span>
+                          <span class="path-loc">
+                            {{ place.trip.region_name }} {{ place.trip.city_name }}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -287,6 +288,25 @@ const toggleCourse = (courseId) => {
   } else {
     expandedCourseId.value = courseId;
   }
+};
+
+// ★ [추가] 코스 상세 정보를 Day별로 그룹화하는 함수
+const groupDetailsByDay = (details) => {
+  if (!details) return {};
+  
+  // day 기준으로 정렬
+  const sorted = [...details].sort((a, b) => a.day - b.day || a.order - b.order);
+  
+  const groups = {};
+  sorted.forEach(item => {
+    const d = item.day;
+    if (!groups[d]) {
+      groups[d] = [];
+    }
+    groups[d].push(item);
+  });
+  
+  return groups;
 };
 
 const fetchData = async () => {
@@ -537,14 +557,8 @@ const formatDate = (dateString) => {
 }
 
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .detail-info {
@@ -561,37 +575,85 @@ const formatDate = (dateString) => {
   margin: 5px 0;
 }
 
+/* ========== 타임라인 스타일 (수정됨) ========== */
+.path-timeline {
+  margin-top: 15px;
+}
+
 .path-title {
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: #333;
-  font-size: 15px;
+  font-size: 16px;
 }
 
-.path-item {
+.day-group {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.day-header {
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  padding: 12px;
+}
+
+.day-badge {
+  background-color: #333;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 15px;
+}
+
+.day-places {
+  margin-left: 10px;
+  padding-left: 15px;
+  border-left: 2px solid #eee;
+}
+
+.path-item.simple {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
   background-color: white;
   border-radius: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #eee;
+  border: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  position: relative;
 }
 
-.path-item:hover {
+.path-item.simple:hover {
   border-color: #7B9DFF;
+  transform: translateX(5px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.path-order {
+.path-item.simple::before {
+  content: '';
+  position: absolute;
+  left: -21px; 
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background-color: #eee;
+}
+
+.order-circle {
+  width: 24px;
+  height: 24px;
   background-color: #7B9DFF;
   color: white;
+  border-radius: 50%;
   font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  margin-right: 12px;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
   flex-shrink: 0;
 }
 
@@ -609,12 +671,14 @@ const formatDate = (dateString) => {
 .path-loc {
   font-size: 12px;
   color: #888;
+  margin-top: 2px;
 }
 
 .no-path {
   color: #999;
   font-size: 13px;
   font-style: italic;
+  padding-left: 10px;
 }
 
 /* ========== 찜 카드 그리드 ========== */
