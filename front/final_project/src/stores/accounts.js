@@ -41,25 +41,34 @@ export const useAccountStore = defineStore('account', () => {
         }
     }
 
-    const logIn = function (payload) {
-        const username = payload.username
-        const password = payload.password
+    const logIn = async function (payload) {
+        const { username, password } = payload
 
-        axios({
-            method: 'post',
-            url: `${API_URL}/api/auth/login`,
-            data: {
-                username, password
-            }
-        }).then(res => {
-            token.value = res.data.access
+        try {
+            const res = await axios({
+                method: 'post',
+                url: `${API_URL}/api/auth/login/`, 
+                data: { username, password }
+            })
+
+            // 1. 토큰 저장 (응답 키값에 따라 유연하게 처리)
+            token.value = res.data.key || res.data.access
+            
+            // 2. 유저 정보 세팅
             user.value = {
                 username: username
             }
-            getUserInfo()
+            
+            // 3. 추가 유저 정보 요청 (await로 순서 보장)
+            await getUserInfo()
 
+            // 4. 홈으로 이동
             router.push({ name : 'home'})
-        }).catch(err => console.log(err))
+
+        } catch (err) {
+            console.log(err)
+            throw err 
+        }
     }
 
     const getUserInfo = function () {
