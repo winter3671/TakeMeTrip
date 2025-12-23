@@ -22,6 +22,12 @@ class ArticleListSerializer(serializers.ModelSerializer):
         model = Article
         fields = ('id', 'title', 'content', 'image', 'course', 'created_at', 'updated_at', 'username', 'like_count', 'comment_count', 'hits')
 
+# 게시글 작성용
+class ArticleCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        fields = ('title', 'content', 'image', 'course')
+
 # 게시글 상세 조회용
 class ArticleDetailSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)

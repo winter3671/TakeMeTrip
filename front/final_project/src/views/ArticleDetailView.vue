@@ -46,23 +46,21 @@
           📅 {{ article.course.start_date }} ~ {{ article.course.end_date }}
         </p>
         
-        <div class="course-spots" v-if="article.course.details">
-          <span class="spot-label">코스 요약:</span>
-          <div class="spot-list">
-             <span 
-               v-for="(detail, index) in article.course.details.slice(0, 5)" 
-               :key="detail.id" 
-               class="spot-item"
-             >
-               {{ detail.trip.title }}
-               <span v-if="index < article.course.details.slice(0, 5).length - 1" class="arrow">→</span>
-             </span>
-             <span v-if="article.course.details.length > 5">...</span>
+        <div class="preview-itinerary">
+          <div v-for="(spots, day) in groupedDetails" :key="day" class="day-row">
+            <div class="day-label">Day {{ day }}</div>
+            
+            <div class="day-spots">
+              <span v-for="(detail, idx) in spots" :key="detail.id" class="spot-item">
+                {{ detail.trip_name || (detail.trip ? detail.trip.title : '여행지') }}
+                
+                <span v-if="idx < spots.length - 1" class="arrow">→</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
+      </div>
     <div class="like-section">
       <button class="like-btn" @click="handleLike">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="heart-icon" viewBox="0 0 16 16">
@@ -146,6 +144,26 @@ const API_URL = 'http://127.0.0.1:8000';
 
 const isAuthor = computed(() => {
   return accountStore.user && article.value && accountStore.user.username === article.value.username;
+});
+
+const groupedDetails = computed(() => {
+  if (!article.value || !article.value.course || !article.value.course.details) {
+    return {};
+  }
+
+  const groups = {};
+  article.value.course.details.forEach(detail => {
+    const day = detail.day;
+    if (!groups[day]) {
+      groups[day] = [];
+    }
+    groups[day].push(detail);
+  });
+  
+  return Object.keys(groups).sort().reduce((acc, key) => {
+    acc[key] = groups[key];
+    return acc;
+  }, {});
 });
 
 onMounted(() => {
@@ -570,15 +588,60 @@ const formatTime = (dateString) => {
   color: #495057;
 }
 
+.preview-itinerary {
+  margin-top: 15px;
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e1f5fe;
+}
+
+.day-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #eee;
+}
+
+.day-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.day-label {
+  background-color: #7B9DFF;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  margin-right: 15px;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+}
+
+.day-spots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
 .spot-item {
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600; 
   color: #333;
 }
 
 .arrow {
-  color: #ccc;
+  color: #bbb;
+  margin: 0 6px;
   font-size: 12px;
-  margin: 0 4px;
-  font-weight: 400;
 }
 </style>
