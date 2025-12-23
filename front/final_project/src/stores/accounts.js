@@ -10,7 +10,7 @@ export const useAccountStore = defineStore('account', () => {
 
     const API_URL = 'http://127.0.0.1:8000'
 
-    const signUp = function(payload) {
+    const signUp = async function(payload) {
         const username = payload.username
         const email = payload.email
         const password1 = payload.password1
@@ -25,15 +25,20 @@ export const useAccountStore = defineStore('account', () => {
         if (email && email.trim() !== '') {
             requestData.email = email
         }
-        axios ({
-            method: 'post',
-            url: `${API_URL}/api/auth/registration/`,
-            data: requestData
-        }).then(res => {
-            console.log('회원 가입이 완료되었습니다.')
+
+        try {
+            const res = await axios({
+                method: 'post',
+                url: `${API_URL}/api/auth/registration/`,
+                data: requestData
+            })
             const password = password1
-            logIn({ username, password })
-        }).catch(err => console.log(err))
+            await logIn({ username, password }) 
+
+        } catch (err) {
+            console.log(err)
+            throw err 
+        }
     }
 
     const logIn = function (payload) {
