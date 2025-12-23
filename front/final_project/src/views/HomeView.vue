@@ -13,6 +13,7 @@
                 v-for="trip in bannerTrips" 
                 :key="trip.id" 
                 class="slide-item"
+                @click="goDetail(trip.id)"
               >
                 <img :src="trip.thumbnail_image" :alt="trip.title" />
                 <div class="slide-info">
@@ -79,7 +80,8 @@
               <div 
                 v-for="trip in tabData" 
                 :key="trip.id" 
-                class="card-item slider-card" 
+                class="card-item slider-card"
+                @click="goDetail(trip.id)"
               >
                 <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
                 
@@ -274,6 +276,10 @@ const switchTab = async (tabName) => {
 
 const refreshData = () => {
   fetchTabData();
+};
+
+const goDetail = (id) => {
+  router.push({ name: 'trip-detail', params: { id } });
 };
 
 onMounted(() => {
