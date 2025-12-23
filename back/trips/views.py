@@ -133,24 +133,7 @@ class CourseListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        print("=" * 50)
-        print("CourseListCreateView.get_queryset() 호출")
-        print(f"요청 사용자: {self.request.user}")
-        print(f"사용자 ID: {self.request.user.id}")
-        print(f"사용자 이름: {self.request.user.username}")
-        
-        # PlannerCourse 사용
-        queryset = PlannerCourse.objects.filter(user=self.request.user).order_by('-created_at')
-        print(f"현재 사용자의 코스 개수: {queryset.count()}")
-        
-        if queryset.exists():
-            for course in queryset:
-                print(f"  - 코스 ID: {course.id}, 제목: {course.title}")
-        else:
-            print("  - 코스 없음")
-        
-        print("=" * 50)
-        return queryset
+        return PlannerCourse.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
