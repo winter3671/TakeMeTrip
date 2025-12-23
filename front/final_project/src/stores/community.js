@@ -7,7 +7,6 @@ import { useAccountStore } from '@/stores/accounts'
 
 export const useCommunityStore = defineStore('community', () => {
   const router = useRouter()
-  
   const accountStore = useAccountStore()
   
   const articles = ref([])
@@ -53,7 +52,7 @@ export const useCommunityStore = defineStore('community', () => {
     }
   }
 
-  // 2. 게시글 생성 (수정됨)
+  // 게시글 생성
   const createArticle = async (payload) => {
     try {
       const res = await axios.post(`${API_URL}/articles/`, payload, {
@@ -70,7 +69,25 @@ export const useCommunityStore = defineStore('community', () => {
     }
   }
 
-  // 3. 댓글 작성 (수정됨)
+  // ★ [추가] 게시글 수정
+  const updateArticle = async (id, payload) => {
+    try {
+      await axios.put(`${API_URL}/articles/${id}/`, payload, {
+        headers: {
+          Authorization: `Bearer ${accountStore.token}`
+        }
+      })
+      alert('게시글이 수정되었습니다.')
+      // 수정 후 상세 조회 호출하여 데이터 갱신
+      await getArticleDetail(id)
+      router.push({ name: 'article-detail', params: { id } })
+    } catch (error) {
+      console.error('게시글 수정 실패:', error)
+      alert('게시글 수정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 댓글 작성
   const createComment = async (articleId, content) => {
     try {
       await axios.post(`${API_URL}/articles/${articleId}/comments/`, { content }, {
@@ -85,7 +102,7 @@ export const useCommunityStore = defineStore('community', () => {
     }
   }
 
-  // 4. 좋아요 (수정됨)
+  // 좋아요
   const likeArticle = async (articleId) => {
     try {
       const res = await axios.post(`${API_URL}/articles/${articleId}/likes/`, {}, {
@@ -105,6 +122,7 @@ export const useCommunityStore = defineStore('community', () => {
     }
   }
 
+  // 댓글 삭제
   const deleteComment = function(articleId, commentId) {
     if (!confirm('댓글을 삭제하시겠습니까?')) return
 
@@ -119,7 +137,6 @@ export const useCommunityStore = defineStore('community', () => {
       getArticleDetail(articleId)
     })
     .catch(err => {
-      
       if (err.response?.status === 403) {
         alert('댓글 삭제 권한이 없습니다.')
       } else if (err.response?.status === 404) {
@@ -130,6 +147,7 @@ export const useCommunityStore = defineStore('community', () => {
     })
   }
 
+  // 내 댓글 조회
   const getMyComments = async () => {
       try {
         const res = await axios.get(`${API_URL}/comments/my/`, {
@@ -144,7 +162,6 @@ export const useCommunityStore = defineStore('community', () => {
       }
     }
 
-
   return { 
     articles, 
     article, 
@@ -152,6 +169,7 @@ export const useCommunityStore = defineStore('community', () => {
     getArticleDetail, 
     deleteArticle,
     createArticle,
+    updateArticle,
     createComment,
     likeArticle,
     deleteComment,
