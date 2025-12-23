@@ -27,8 +27,40 @@
       </div>
     </div>
 
+    <div v-if="article.image" class="article-image-wrapper">
+      <img :src="`${API_URL}${article.image}`" alt="게시글 이미지">
+    </div>
+
     <div class="article-body">
       <div class="content-text">{{ article.content }}</div>
+    </div>
+
+    <div v-if="article.course" class="course-summary-card">
+      <div class="course-header">
+        <span class="badge-region">{{ article.course.region }}</span>
+        <h3 class="card-title">{{ article.course.title }}</h3>
+      </div>
+      
+      <div class="course-body">
+        <p class="course-date">
+          📅 {{ article.course.start_date }} ~ {{ article.course.end_date }}
+        </p>
+        
+        <div class="course-spots" v-if="article.course.details">
+          <span class="spot-label">코스 요약:</span>
+          <div class="spot-list">
+             <span 
+               v-for="(detail, index) in article.course.details.slice(0, 5)" 
+               :key="detail.id" 
+               class="spot-item"
+             >
+               {{ detail.trip.title }}
+               <span v-if="index < article.course.details.slice(0, 5).length - 1" class="arrow">→</span>
+             </span>
+             <span v-if="article.course.details.length > 5">...</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="like-section">
@@ -110,6 +142,7 @@ const { article } = storeToRefs(communityStore);
 const commentContent = ref('');
 const articleId = route.params.id;
 
+const API_URL = 'http://127.0.0.1:8000';
 
 const isAuthor = computed(() => {
   return accountStore.user && article.value && accountStore.user.username === article.value.username;
@@ -169,6 +202,57 @@ const formatTime = (dateString) => {
 </script>
 
 <style scoped>
+  .article-image-wrapper {
+  margin-top: 20px;
+  text-align: center;
+}
+.article-image-wrapper img {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.course-header {
+  display: flex;
+  gap: 15px;
+  align-items: baseline;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.course-title { font-weight: 700; font-size: 18px; color: #7B9DFF; }
+.course-region { font-weight: 600; color: #555; }
+.course-period { font-size: 14px; color: #888; }
+
+.course-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+.day-badge {
+  background-color: #7B9DFF;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+.place-name {
+  font-weight: 500;
+  color: #333;
+}
+
 .detail-container {
   max-width: 800px;
   margin: 40px auto;
@@ -215,6 +299,7 @@ const formatTime = (dateString) => {
   color: #333;
   margin-bottom: 20px;
   line-height: 1.4;
+  word-break: break-all; 
 }
 
 .article-meta {
@@ -241,7 +326,8 @@ const formatTime = (dateString) => {
   font-size: 16px;
   line-height: 1.8;
   color: #333;
-  white-space: pre-wrap; /* 줄바꿈 유지 */
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 /* 좋아요 버튼 */
@@ -417,5 +503,82 @@ const formatTime = (dateString) => {
   .article-title {
     font-size: 22px;
   }
+}
+
+.course-summary-card {
+  margin: 30px 0;
+  padding: 25px;
+  border: 1px solid #e0e7ff;
+  border-left: 5px solid #7B9DFF;
+  border-radius: 8px;
+  background-color: #f8faff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.course-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.badge-region {
+  background-color: #7B9DFF;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.course-date {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-spots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.spot-label {
+  font-size: 13px;
+  color: #888;
+  font-weight: 600;
+}
+
+.spot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  color: #495057;
+}
+
+.spot-item {
+  font-weight: 600;
+  color: #333;
+}
+
+.arrow {
+  color: #ccc;
+  font-size: 12px;
+  margin: 0 4px;
+  font-weight: 400;
 }
 </style>

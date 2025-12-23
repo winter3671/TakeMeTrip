@@ -48,6 +48,10 @@
         class="article-card"
         @click="goToDetail(article.id)"
       >
+        <div v-if="article.image" class="article-thumbnail">
+          <img :src="`${API_URL}${article.image}`" alt="썸네일" />
+        </div>
+
         <div class="article-content">
           <h3 class="article-title">{{ article.title }}</h3>
           <p class="article-preview">{{ article.content }}</p>
@@ -123,6 +127,8 @@ const { articles } = storeToRefs(communityStore);
 
 const searchKeyword = ref('');
 const searchCondition = ref('title_content');
+
+const API_URL = 'http://127.0.0.1:8000';   // 추후 .env를 이용해 설정
 
 // --- 페이지네이션 관련 로직 시작 ---
 const currentPage = ref(1);
@@ -297,16 +303,17 @@ const formatDate = (dateString) => {
 }
 
 .article-card {
-  display: flex;
+  display: flex;            
   justify-content: space-between;
   align-items: center;
-  padding: 25px;
+  padding: 20px;
   background-color: white;
   border: 1px solid #eee;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  height: 140px; 
 }
 
 .article-card:hover {
@@ -315,10 +322,29 @@ const formatDate = (dateString) => {
   border-color: #7B9DFF;
 }
 
+.article-thumbnail {
+  width: 120px;        
+  height: 90px;      
+  margin-right: 20px;  
+  border-radius: 8px; 
+  overflow: hidden;  
+  flex-shrink: 0;  
+  background-color: #f1f3f5; 
+}
+
+.article-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+}
+
 .article-content {
-  flex: 1;
-  min-width: 0; /* flex 자식 내 말줄임 처리를 위해 필수 */
-  margin-right: 20px;
+  flex: 1;           
+  min-width: 0;     
+  margin-right: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .article-title {
@@ -326,6 +352,7 @@ const formatDate = (dateString) => {
   font-weight: 700;
   color: #333;
   margin-bottom: 8px;
+  
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -334,18 +361,12 @@ const formatDate = (dateString) => {
 .article-preview {
   font-size: 14px;
   color: #666;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
+  
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90%;
-}
-
-.article-meta {
-  display: flex;
-  gap: 15px;
-  font-size: 13px;
-  color: #888;
+  max-width: 100%;
 }
 
 .author {
@@ -448,6 +469,22 @@ const formatDate = (dateString) => {
     border-top: 1px solid #f0f0f0;
     justify-content: flex-start;
     gap: 20px;
+  }
+
+  /* 모바일 화면 대응 */
+  @media (max-width: 768px) {
+    .article-card {
+      flex-direction: column; /* 모바일에서는 세로로 배치 */
+      height: auto;
+      align-items: flex-start;
+    }
+    
+    .article-thumbnail {
+      width: 100%;      /* 모바일에서는 가로 꽉 차게 */
+      height: 180px;    /* 높이 적당히 */
+      margin-right: 0;
+      margin-bottom: 15px;
+    }
   }
 }
 </style>

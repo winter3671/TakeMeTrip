@@ -400,3 +400,12 @@ class CourseSaveView(APIView):
                         )
 
         return Response(CourseSerializer(course).data, status=201)
+    
+class MyCourseListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 내가 만든 코스만 가져오기
+        courses = Course.objects.filter(user=request.user).order_by('-created_at')
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data)
