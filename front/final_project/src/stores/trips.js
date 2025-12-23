@@ -58,7 +58,7 @@ export const useTripStore = defineStore('trip', () => {
   // 4. 홈 화면 추천 (카테고리별 or 전체 랜덤)
   const getRandomTrips = async (category) => {
     try {
-      const params = category ? { category } : {}
+      const params = category ? { category } : { count : 10 }
       const endpoint = category ? `${API_URL}/recommend/category/` : `${API_URL}/random/`
       const res = await axios.get(endpoint, { params })
       return res.data
