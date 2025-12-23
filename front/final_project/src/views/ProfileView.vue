@@ -130,7 +130,7 @@
               </span>
             </div>
             <div class="item-sub">
-              <span>{{ course.places ? course.places.length : 0 }}개의 장소</span>
+              <span>{{ course.details ? course.details.length : 0 }}개의 장소</span>
               <span>상세보기 &gt;</span>
             </div>
           </li>
@@ -265,11 +265,6 @@ const goToCourseDetail = (id) => {
     alert('코스 정보를 찾을 수 없습니다.');
     return;
   }
-  
-  console.log('코스 상세로 이동:', id);
-  
-  // TODO: 코스 상세 페이지 라우터 추가 후 활성화
-  // router.push({ name: 'course-detail', params: { id } });
   
   alert(`코스 ID ${id}의 상세 페이지로 이동합니다.\n(상세 페이지는 아직 구현 전입니다.)`);
 };

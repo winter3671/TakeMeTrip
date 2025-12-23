@@ -114,18 +114,13 @@ export const useTripStore = defineStore('trip', () => {
 
 const getMyCourses = async () => {
   const accountStore = useAccountStore()
-  
-  console.log('=== getMyCourses 호출 ===')
-  console.log('accountStore.token:', accountStore.token)
-  
+
   if (!accountStore.token) {
     console.log('토큰 없음 - 로그인 필요')
     return []
   }
 
   try {
-    console.log('코스 목록 요청:', `${API_URL}/courses/`)
-    
     const res = await axios({
       method: 'get',
       url: `${API_URL}/courses/`,
@@ -133,19 +128,9 @@ const getMyCourses = async () => {
         Authorization: `Bearer ${accountStore.token}` 
       }
     })
-    
-    console.log('=== 코스 API 원본 응답 ===')
-    console.log('res.data:', res.data)
-    console.log('res.status:', res.status)
-    
     // DRF pagination 처리
     let courses = res.data.results ? res.data.results : res.data
-    
-    console.log('courses 타입:', typeof courses)
-    console.log('courses 배열 여부:', Array.isArray(courses))
-    console.log('courses 길이:', courses.length)
-    console.log('courses 내용:', courses)
-    
+
     // 배열인지 확인
     if (!Array.isArray(courses)) {
       console.error('코스 데이터가 배열이 아닙니다:', courses)
@@ -164,9 +149,6 @@ const getMyCourses = async () => {
       }
       return true
     })
-    
-    console.log('유효한 코스 개수:', validCourses.length)
-    console.log('유효한 코스 목록:', validCourses)
     
     return validCourses
     
