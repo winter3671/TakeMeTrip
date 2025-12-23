@@ -116,34 +116,34 @@ class Wishlist(models.Model):
         return f"{self.user.email} - {self.trip.title}"
     
 # 사용자별 코스 저장
-class Course(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='courses')
-    title = models.CharField(max_length=100, default="나만의 여행 코스")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+# class Course(models.Model):
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='courses')
+#     title = models.CharField(max_length=100, default="나만의 여행 코스")
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
     
-    class Meta:
-        db_table = 'courses'
+#     class Meta:
+#         db_table = 'courses'
 
-    def __str__(self):
-        return f"[{self.user.email}] {self.title}"
+#     def __str__(self):
+#         return f"[{self.user.email}] {self.title}"
 
-# 코스에 포함된 여행지 
-class CoursePlace(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='places')
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
+# # 코스에 포함된 여행지 
+# class CoursePlace(models.Model):
+#     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='places')
+#     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
 
-    # 날짜 선택 기능(추후 추가 예정으로, 지금은 1로 설정)
-    day = models.PositiveIntegerField(default=1)
+#     # 날짜 선택 기능(추후 추가 예정으로, 지금은 1로 설정)
+#     day = models.PositiveIntegerField(default=1)
     
-    # 방문 순서
-    order = models.PositiveIntegerField(default=0)
+#     # 방문 순서
+#     order = models.PositiveIntegerField(default=0)
 
-    class Meta:
-        db_table = 'course_places'
-        # DB에서 가져올 때 '날짜 순' -> '순서 순'으로 자동 정렬
-        ordering = ['day', 'order']
+#     class Meta:
+#         db_table = 'course_places'
+#         # DB에서 가져올 때 '날짜 순' -> '순서 순'으로 자동 정렬
+#         ordering = ['day', 'order']
 
-    def __str__(self):
-        return f"{self.course.title} ({self.day}일차 - {self.order}번째): {self.trip.title}"
+#     def __str__(self):
+#         return f"{self.course.title} ({self.day}일차 - {self.order}번째): {self.trip.title}"
     

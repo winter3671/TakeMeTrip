@@ -112,6 +112,56 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+const getMyCourses = async () => {
+  const accountStore = useAccountStore()
+
+  if (!accountStore.token) {
+    console.log('토큰 없음 - 로그인 필요')
+    return []
+  }
+
+  try {
+    const res = await axios({
+      method: 'get',
+      url: `${API_URL}/courses/`,
+      headers: { 
+        Authorization: `Bearer ${accountStore.token}` 
+      }
+    })
+    // DRF pagination 처리
+    let courses = res.data.results ? res.data.results : res.data
+
+    // 배열인지 확인
+    if (!Array.isArray(courses)) {
+      console.error('코스 데이터가 배열이 아닙니다:', courses)
+      return []
+    }
+    
+    // null이나 undefined 제거
+    const validCourses = courses.filter(course => {
+      if (!course) {
+        console.warn('null 또는 undefined 코스 발견')
+        return false
+      }
+      if (!course.id) {
+        console.warn('ID 없는 코스:', course)
+        return false
+      }
+      return true
+    })
+    
+    return validCourses
+    
+  } catch (error) {
+    console.error('=== 코스 목록 로드 실패 ===')
+    console.error('error:', error)
+    console.error('error.response:', error.response)
+    console.error('error.response?.data:', error.response?.data)
+    console.error('error.response?.status:', error.response?.status)
+    return []
+  }
+}
+
   return { 
     trips, 
     totalCount, 
@@ -122,6 +172,7 @@ export const useTripStore = defineStore('trip', () => {
     getRandomTrips, 
     getMyWishlist,
     toggleLike,
-    getAiRecommendations 
+    getAiRecommendations,
+    getMyCourses
   }
 })

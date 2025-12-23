@@ -200,6 +200,8 @@ class AIPlannerView(APIView):
                     day_items.append(self._make_item("accommodation", "start", current_time, accommodation, request))
                     move_min = calculate_move_time_minutes(calculate_distance(accommodation, anchor))
                     current_time += timedelta(minutes=move_min)
+            
+            last_visited = current_place
 
             # 오전 일정
             lunch_threshold = current_time.replace(hour=11, minute=30)
