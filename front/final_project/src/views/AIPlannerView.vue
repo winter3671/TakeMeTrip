@@ -92,7 +92,7 @@
                 <div class="dot" :class="item.type"></div>
               </div>
 
-              <div class="content-col" @click="goToDetail(item.data.id)">
+              <div class="content-col">
                 <div class="place-card">
                   <img :src="item.data.thumbnail_image || '/src/assets/no_image.png'" class="place-img">
                   <div class="place-info">
@@ -109,7 +109,7 @@
 
       <div v-if="plannerStore.generatedPlan.recommended_accommodation" class="acc-recommend">
         <h3>🏠 추천 숙소</h3>
-        <div class="place-card acc-card" @click="goToDetail(plannerStore.generatedPlan.recommended_accommodation.id)">
+        <div class="place-card acc-card">
            <img :src="plannerStore.generatedPlan.recommended_accommodation.thumbnail_image || '/src/assets/no_image.png'" class="place-img">
            <div class="place-info">
              <h4>{{ plannerStore.generatedPlan.recommended_accommodation.title }}</h4>
@@ -199,9 +199,6 @@ const resetPlanner = () => {
   plannerStore.generatedPlan = null;
 };
 
-const goToDetail = (id) => {
-  router.push({ name: 'detail', params: { id } });
-};
 
 const translateType = (type) => {
   const map = { 'spot': '관광', 'meal': '식사', 'accommodation': '숙소' };
