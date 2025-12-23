@@ -51,6 +51,8 @@ export const useAccountStore = defineStore('account', () => {
             user.value = {
                 username: username
             }
+            getUserInfo()
+
             router.push({ name : 'home'})
         }).catch(err => console.log(err))
     }

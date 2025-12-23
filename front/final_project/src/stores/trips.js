@@ -5,13 +5,35 @@ import { useAccountStore } from '@/stores/accounts'
 
 export const useTripStore = defineStore('trip', () => {
   const accountStore = useAccountStore()
-  
-  // 백엔드 API URL (확인 필요)
   const API_URL = 'http://127.0.0.1:8000/api/trips'
 
+  // 상태 변수 (State)
+  const trips = ref([])        // ★ 게시글 목록 (InformationView용)
+  const totalCount = ref(0)    // ★ 전체 게시글 수 (페이지네이션용)
   const categories = ref([])
 
-  // 카테고리 목록 가져오기
+  // 1. 여행지 목록 조회 (필터링, 페이징 포함) - ★ 복구된 함수
+  const getTrips = async (params) => {
+    try {
+      const res = await axios.get(`${API_URL}/`, { params })
+      
+      // DRF 페이지네이션 응답 구조 ({ count: 100, results: [...] }) 처리
+      if (res.data.results) {
+        trips.value = res.data.results
+        totalCount.value = res.data.count
+      } else {
+        // 페이지네이션이 없을 경우
+        trips.value = res.data
+        totalCount.value = res.data.length
+      }
+    } catch (error) {
+      console.error('여행지 목록 로드 실패:', error)
+      trips.value = [] // 에러 시 빈 배열로 초기화
+      totalCount.value = 0
+    }
+  }
+
+  // 2. 카테고리 목록 조회
   const getCategories = async () => {
     try {
       const res = await axios.get(`${API_URL}/categories/`)
@@ -22,7 +44,7 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  // 상단 배너용 랜덤 추천
+  // 3. 배너용 랜덤 추천
   const getRandomBannerTrips = async () => {
     try {
       const res = await axios.get(`${API_URL}/banner-random/`)
@@ -33,7 +55,7 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  // 카테고리별 추천 (없으면 전체 랜덤)
+  // 4. 홈 화면 추천 (카테고리별 or 전체 랜덤)
   const getRandomTrips = async (category) => {
     try {
       const params = category ? { category } : {}
@@ -46,14 +68,12 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  // 내 찜 목록 가져오기
+  // 5. 내 찜 목록 조회
   const getMyWishlist = async () => {
     if (!accountStore.token) return []
     try {
       const res = await axios.get(`${API_URL}/my/wishlist/`, {
-        headers: {
-          Authorization: `Bearer ${accountStore.token}`
-        }
+        headers: { Authorization: `Bearer ${accountStore.token}` }
       })
       return res.data
     } catch (error) {
@@ -62,18 +82,15 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  // 좋아요 토글
+  // 6. 좋아요 토글
   const toggleLike = async (tripId) => {
     if (!accountStore.token) {
       alert('로그인이 필요합니다.')
       return null
     }
-
     try {
       const res = await axios.post(`${API_URL}/${tripId}/like/`, {}, {
-        headers: {
-          Authorization: `Bearer ${accountStore.token}`
-        }
+        headers: { Authorization: `Bearer ${accountStore.token}` }
       })
       return res.data.is_liked 
     } catch (error) {
@@ -82,12 +99,11 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+  // 7. AI 추천
   const getAiRecommendations = async () => {
     try {
       const res = await axios.get(`${API_URL}/recommend/ai/`, {
-        headers: {
-          Authorization: `Bearer ${accountStore.token}` 
-        }
+        headers: { Authorization: `Bearer ${accountStore.token}` }
       })
       return res.data
     } catch (error) {
@@ -97,12 +113,15 @@ export const useTripStore = defineStore('trip', () => {
   }
 
   return { 
-    categories, 
+    trips, 
+    totalCount, 
+    categories,
+    getTrips,
     getCategories, 
     getRandomBannerTrips, 
     getRandomTrips, 
     getMyWishlist,
     toggleLike,
-    getAiRecommendations
+    getAiRecommendations 
   }
 })

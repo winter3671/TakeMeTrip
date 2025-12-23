@@ -211,18 +211,18 @@ const fetchData = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   if (!accountStore.isLogin) {
     alert("로그인이 필요합니다.");
     router.push({ name: 'login' });
     return;
   }
   
-  if (accountStore.token && !accountStore.user) {
-    accountStore.getUserInfo();
+  if (accountStore.token) {
+    await accountStore.getUserInfo();
   }
   
-  fetchData();
+  await fetchData();
 });
 
 const goToArticle = (id) => router.push({ name: 'article-detail', params: { id } });
