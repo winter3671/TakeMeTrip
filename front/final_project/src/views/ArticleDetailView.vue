@@ -209,6 +209,12 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('ko-KR');
 };
 
+const goToUpdate = () => {
+  router.push({ name: 'article-update', params: {
+    id: articleId
+  }})
+}
+
 // 시간 포맷 (방금 전, 또는 YYYY.MM.DD HH:mm)
 const formatTime = (dateString) => {
   const date = new Date(dateString);

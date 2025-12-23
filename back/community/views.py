@@ -64,7 +64,11 @@ def article_detail(request, article_pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     elif request.method == 'PUT':
+        if request.data.get('image_clear') == 'true':
+            article.image = None 
+        
         serializer = ArticleDetailSerializer(article, data=request.data, partial=True)
+        
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data)

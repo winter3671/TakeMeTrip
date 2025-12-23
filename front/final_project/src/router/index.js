@@ -12,6 +12,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAccountStore } from '@/stores/accounts'
 import SocialCallback from '@/views/SocialCallback.vue'
 import AIPlannerView from '@/views/AIPlannerView.vue'
+import ArticleUpdateView from '@/views/ArticleUpdateView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -79,6 +80,11 @@ const router = createRouter({
               next()
           }
       } 
+    },
+    {
+      path: '/community/:id/update',
+      name: 'article-update',
+      component: ArticleUpdateView
     },
     {
       path: '/auth/callback',
