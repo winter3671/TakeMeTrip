@@ -10,17 +10,28 @@
     </div>
 
     <div v-if="!plannerStore.generatedPlan" class="form-card">
+      
       <div class="form-group">
         <label class="form-label"><span class="icon">📅</span> 여행 일정</label>
         <div class="date-inputs">
           <div class="input-wrapper">
             <span class="sub-label">가는 날</span>
-            <input type="date" v-model="formData.start_date" class="custom-input" :min="minDate"/>
+            <input 
+              type="date" 
+              v-model="formData.start_date" 
+              class="custom-input" 
+              :min="minDate"
+            />
           </div>
           <span class="tilde">~</span>
           <div class="input-wrapper">
             <span class="sub-label">오는 날</span>
-            <input type="date" v-model="formData.end_date" class="custom-input" :min="minEndDate"/>
+            <input 
+              type="date" 
+              v-model="formData.end_date" 
+              class="custom-input" 
+              :min="minEndDate"
+            />
           </div>
         </div>
       </div>
@@ -93,6 +104,13 @@
             다른 코스 추천받기
           </button>
           
+          <button class="save-btn" @click="handleSaveCourse" :disabled="isGenerating">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1z"/>
+            </svg>
+            내 코스로 저장
+          </button>
+          
           <button class="reset-btn" @click="resetPlanner" :disabled="isGenerating">조건 다시 설정</button>
         </div>
       </div>
@@ -145,9 +163,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlannerStore } from '@/stores/planners';
+import { useAccountStore } from '@/stores/accounts'; // ★ 추가: 로그인 체크용
 
 const router = useRouter();
 const plannerStore = usePlannerStore();
+const accountStore = useAccountStore(); // ★ 추가
 
 const formData = ref({
   start_date: '',
@@ -161,6 +181,7 @@ const formData = ref({
 
 const isGenerating = ref(false);
 
+// 날짜 제한 계산
 const getTodayDate = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -168,12 +189,8 @@ const getTodayDate = () => {
   const day = String(today.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
-
 const minDate = getTodayDate();
-
-const minEndDate = computed(() => {
-  return formData.value.start_date || minDate;
-});
+const minEndDate = computed(() => formData.value.start_date || minDate);
 
 const availableCities = computed(() => {
   if (!formData.value.region_id) return [];
@@ -196,7 +213,7 @@ const getCurrentPosition = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
         (err) => {
-          console.warn("위치 정보를 가져올 수 없어 기본값 사용", err);
+          console.warn("위치 정보 실패", err);
           resolve({ lat: 37.5665, lon: 126.9780 }); 
         }
       );
@@ -206,26 +223,46 @@ const getCurrentPosition = () => {
 
 const handleGenerate = async () => {
   if (!formData.value.start_date || !formData.value.end_date) return alert('일정을 선택해주세요.');
+  if (formData.value.start_date > formData.value.end_date) return alert('오는 날은 가는 날보다 빠를 수 없습니다.');
   if (!formData.value.region_id || !formData.value.city_id) return alert('여행지를 선택해주세요.');
 
   isGenerating.value = true;
 
-  // 위치 정보가 아직 없으면(최초 생성 시) 가져옴
   if (formData.value.current_mapx === 0.0) {
     const pos = await getCurrentPosition();
     formData.value.current_mapy = pos.lat; 
     formData.value.current_mapx = pos.lon; 
   }
 
-  // API 호출
-  const success = await plannerStore.generatePlan(formData.value);
-  
+  await plannerStore.generatePlan(formData.value);
   isGenerating.value = false;
 };
 
-// ★ 새로고침 함수 (같은 데이터로 다시 요청)
+// 새로고침
 const refreshPlan = () => {
   handleGenerate();
+};
+
+// ★ [추가] 코스 저장 핸들러
+const handleSaveCourse = async () => {
+  if (!accountStore.isLogin) {
+    alert("로그인이 필요합니다.");
+    router.push({ name: 'login' });
+    return;
+  }
+
+  // 코스 제목 입력받기
+  const defaultTitle = `${formData.value.start_date} ${availableCities.value.find(c=>c.id === formData.value.city_id)?.name || '여행'}`;
+  const title = prompt("이 여행 코스의 이름을 입력해주세요.", defaultTitle);
+  
+  if (title) {
+    const success = await plannerStore.saveCourse(title, formData.value);
+    if (success) {
+      if (confirm("저장된 코스를 확인하시겠습니까?")) {
+        router.push({ name: 'profile' });
+      }
+    }
+  }
 };
 
 const resetPlanner = () => {
@@ -441,11 +478,35 @@ onMounted(() => {
   margin-bottom: 30px; 
 }
 
+.save-btn {
+  background-color: #FFB78B; /* 포인트 컬러 */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+.save-btn:hover { 
+  background-color: #ffa06d; 
+}
+
+.save-btn:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+}
+
 .header-actions {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 15px;
+  flex-wrap: wrap;
 }
 
 .refresh-btn {

@@ -36,6 +36,13 @@
       >
         찜한 여행지 ❤️
       </button>
+      <button 
+        class="tab-btn" 
+        :class="{ active: activeTab === 'courses' }"
+        @click="activeTab = 'courses'"
+      >
+        내 여행 경로 🗺️
+      </button>
     </div>
 
     <div class="tab-content">
@@ -72,11 +79,9 @@
       </div>
 
       <div v-if="activeTab === 'wishlist'" class="content-section">
-        
         <div v-if="myWishlist.length === 0" class="no-data">
           찜한 여행지가 없습니다. <br> 마음에 드는 곳에 하트(❤️)를 눌러보세요!
         </div>
-
         <div v-else>
           <div class="card-grid">
             <div 
@@ -85,7 +90,6 @@
               class="card-item"
             >
               <img :src="trip.thumbnail_image || noImage" alt="여행지" class="card-img" />
-              
               <button 
                 class="heart-btn active" 
                 @click.stop="handleToggleLike(trip)"
@@ -94,28 +98,43 @@
                   <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
                 </svg>
               </button>
-
-              <div class="card-overlay">
+              <div class="card-overlay" @click="goToTripDetail(trip.id)">
                 <h3 class="card-title">{{ trip.title }}</h3>
                 <p class="card-location">{{ trip.region_name }} {{ trip.city_name }}</p>
               </div>
             </div>
           </div>
-
           <div class="pagination" v-if="totalPages > 1">
             <button class="page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">&lt;</button>
-            <button 
-              v-for="page in totalPages" 
-              :key="page" 
-              class="page-btn" 
-              :class="{ active: currentPage === page }"
-              @click="changePage(page)"
-            >
-              {{ page }}
-            </button>
+            <button v-for="page in totalPages" :key="page" class="page-btn" :class="{ active: currentPage === page }" @click="changePage(page)">{{ page }}</button>
             <button class="page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">&gt;</button>
           </div>
         </div>
+      </div>
+
+      <div v-if="activeTab === 'courses'" class="content-section">
+        <div v-if="!myCourses || myCourses.length === 0" class="no-data">
+          저장된 여행 경로가 없습니다. <br> AI 플래너로 나만의 여행을 만들어보세요!
+        </div>
+        <ul v-else class="list-group">
+          <li 
+            v-for="course in myCourses" 
+            :key="course.id" 
+            class="list-item course-item" 
+            @click="goToCourseDetail(course.id)"
+          >
+            <div class="item-main">
+              <span class="course-title">🗺️ {{ course.title || '제목 없음' }}</span>
+              <span class="item-date">
+                생성일: {{ course.created_at ? formatDate(course.created_at) : '-' }}
+              </span>
+            </div>
+            <div class="item-sub">
+              <span>{{ course.places ? course.places.length : 0 }}개의 장소</span>
+              <span>상세보기 &gt;</span>
+            </div>
+          </li>
+        </ul>
       </div>
 
     </div>
@@ -123,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/stores/accounts';
 import { useCommunityStore } from '@/stores/community';
@@ -139,21 +158,22 @@ const activeTab = ref('articles');
 const myArticles = ref([]);
 const myComments = ref([]);
 const myWishlist = ref([]);
+const myCourses = ref([]);
 
-// --- 페이지네이션 설정 ---
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
 const totalPages = computed(() => Math.ceil(myWishlist.value.length / itemsPerPage));
 
-// 현재 페이지에 보여줄 데이터 자르기
 const paginatedWishlist = computed(() => {
+  if (!myWishlist.value || myWishlist.value.length === 0) {
+    return [];
+  }
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  return myWishlist.value.slice(start, end);
+  return myWishlist.value.slice(start, end).filter(trip => trip && trip.id);
 });
 
-// 페이지 변경
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
@@ -161,17 +181,13 @@ const changePage = (page) => {
   }
 };
 
-// --- 좋아요 토글 기능 ---
 const handleToggleLike = async (trip) => {
   if (!confirm(`'${trip.title}' 찜을 취소하시겠습니까?`)) return;
-
+  
   const newStatus = await tripStore.toggleLike(trip.id);
   
-  // 찜 취소 성공 시(false 반환) 목록에서 즉시 제거
   if (newStatus === false) {
     myWishlist.value = myWishlist.value.filter(t => t.id !== trip.id);
-    
-    // 현재 페이지에 데이터가 하나도 없게 되면 이전 페이지로 이동
     if (paginatedWishlist.value.length === 0 && currentPage.value > 1) {
       currentPage.value--;
     }
@@ -185,29 +201,44 @@ const fetchData = async () => {
     return;
   }
 
-  // 1. 내 글 가져오기
+  // 1. 내 글
   try {
     const params = { condition: 'author', search: accountStore.user.username };
     await communityStore.getArticles(params);
-    myArticles.value = communityStore.articles;
-  } catch (e) {
-    console.error("내 글 로드 실패", e);
+    myArticles.value = communityStore.articles || [];
+  } catch (e) { 
+    console.error("내 글 로드 실패", e); 
+    myArticles.value = [];
   }
 
-  // 2. 찜 목록 가져오기
+  // 2. 찜 목록
   try {
     const wishes = await tripStore.getMyWishlist();
-    myWishlist.value = wishes;
-  } catch (e) {
-    console.error("찜 목록 로드 실패", e);
+    myWishlist.value = Array.isArray(wishes) ? wishes.filter(w => w && w.id) : [];
+  } catch (e) { 
+    console.error("찜 목록 로드 실패", e); 
+    myWishlist.value = [];
   }
 
-  // 3. 내 댓글 가져오기
+  // 3. 내 댓글
   try {
     const comments = await communityStore.getMyComments();
-    myComments.value = comments;
-  } catch (e) {
-    console.error("내 댓글 로드 실패", e);
+    myComments.value = Array.isArray(comments) ? comments : [];
+  } catch (e) { 
+    console.error("내 댓글 로드 실패", e); 
+    myComments.value = [];
+  }
+
+  // 4. 내 여행 경로
+  try {
+    const courses = await tripStore.getMyCourses();
+    myCourses.value = Array.isArray(courses) ? courses.filter(c => c && c.id) : [];
+    
+    if (myCourses.value.length > 0) {
+    }
+  } catch (e) { 
+    console.error("코스 목록 로드 실패", e); 
+    myCourses.value = [];
   }
 };
 
@@ -226,6 +257,22 @@ onMounted(async () => {
 });
 
 const goToArticle = (id) => router.push({ name: 'article-detail', params: { id } });
+const goToTripDetail = (id) => router.push({ name: 'detail', params: { id } });
+
+const goToCourseDetail = (id) => {
+  if (!id) {
+    console.error('잘못된 코스 ID:', id);
+    alert('코스 정보를 찾을 수 없습니다.');
+    return;
+  }
+  
+  console.log('코스 상세로 이동:', id);
+  
+  // TODO: 코스 상세 페이지 라우터 추가 후 활성화
+  // router.push({ name: 'course-detail', params: { id } });
+  
+  alert(`코스 ID ${id}의 상세 페이지로 이동합니다.\n(상세 페이지는 아직 구현 전입니다.)`);
+};
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('ko-KR');
@@ -369,6 +416,16 @@ const formatDate = (dateString) => {
   color: #888;
   display: flex;
   gap: 10px;
+}
+
+.course-title { 
+  font-size: 16px; 
+  font-weight: 700; 
+  color: #2c3e50; 
+}
+
+.course-item:hover { 
+  background-color: #f0f8ff; 
 }
 
 .card-grid {

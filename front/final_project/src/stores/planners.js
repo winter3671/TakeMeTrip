@@ -51,5 +51,66 @@ export const usePlannerStore = defineStore('planner', () => {
     }
   }
 
-  return { regions, generatedPlan, getLocations, generatePlan }
+  const saveCourse = async (courseTitle, formData) => {
+    if (!accountStore.token) {
+      alert('로그인이 필요합니다.')
+      return false
+    }
+
+    if (!generatedPlan.value) return false
+
+    // 1. 백엔드로 보낼 데이터 가공
+    // Course 모델 필드: title, region, start_date, end_date
+    // CourseDetail 모델 필드: trip_id, day, order
+    
+    // 지역 이름 찾기 (region_id로)
+    const regionObj = regions.value.find(r => r.id === formData.region_id)
+    const regionName = regionObj ? regionObj.name : 'Unknown'
+
+    const payload = {
+      title: courseTitle,
+      region: regionName,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      // 상세 일정 데이터를 리스트로 변환
+      details: [] 
+    }
+
+    // generatedPlan.plan 구조를 순회하며 details 배열 채우기
+    generatedPlan.value.plan.forEach((dayPlan) => {
+      dayPlan.schedule.forEach((item, index) => {
+        // item.data.id는 Trip 모델의 ID여야 함
+        if (item.data && item.data.id) {
+          payload.details.push({
+            trip_id: item.data.id,
+            day: dayPlan.day,
+            order: index + 1 // 순서 (1부터 시작)
+          })
+        }
+      })
+    })
+
+    // 2. API 전송
+    try {
+      const res = await axios.post(`${API_URL}/save/`, payload, {
+        headers: {
+          Authorization: `Bearer ${accountStore.token}`
+        }
+      })
+      alert('여행 코스가 저장되었습니다! 🗺️')
+      return true
+    } catch (error) {
+      console.error('코스 저장 실패:', error)
+      alert('코스 저장 중 오류가 발생했습니다.')
+      return false
+    }
+  }
+
+  return { 
+    regions, 
+    generatedPlan, 
+    getLocations, 
+    generatePlan,
+    saveCourse
+  }
 })
