@@ -142,9 +142,25 @@ const goToRecommend = () => {
 </script>
 
 <style scoped>
-.game-container { max-width: 600px; margin: 40px auto; text-align: center; font-family: 'Noto Sans KR', sans-serif; padding: 0 20px; }
-.game-title { font-size: 2rem; font-weight: 800; color: #333; margin-bottom: 5px; }
-.game-desc { color: #666; margin-bottom: 30px; }
+.game-container { 
+  max-width: 600px; 
+  margin: 100px auto; 
+  text-align: center; 
+  font-family: 'Noto Sans KR', sans-serif; 
+  padding: 0 20px; 
+}
+
+.game-title { 
+  font-size: 2rem; 
+  font-weight: 800; 
+  color: #333; 
+  margin-bottom: 5px; 
+}
+
+.game-desc { 
+  color: #666; 
+  margin-bottom: 30px; 
+}
 
 .board-area {
   position: relative;
