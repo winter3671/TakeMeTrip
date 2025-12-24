@@ -54,7 +54,7 @@
         </div>
         <div class="tab-divider">|</div>
         <div class="tab-item" :class="{ active: currentTab === 'ai' }" @click="switchTab('ai')">
-          AI 기반 추천 장소<div v-if="currentTab === 'ai'" class="triangle"></div>
+          취향 맞춤 추천 장소<div v-if="currentTab === 'ai'" class="triangle"></div>
         </div>
         <div class="tab-divider">|</div>
         <div class="tab-item" :class="{ active: currentTab === 'wishlist' }" @click="switchTab('wishlist')">

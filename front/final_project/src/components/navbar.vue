@@ -28,7 +28,7 @@
             <RouterLink :to="{ name: 'location' }" class="nav-link"><span>여행지역</span></RouterLink>
             
             <a href="#" @click.prevent="goPlanner" class="nav-link" :class="{ 'router-link-active': $route.name === 'planner' }">
-              <span>AI플래너</span>
+              <span>스마트플래너</span>
             </a>
 
             <RouterLink :to="{ name: 'community' }" class="nav-link"><span>커뮤니티</span></RouterLink>
@@ -74,7 +74,7 @@
           <RouterLink :to="{ name: 'information' }" class="mobile-nav-link" @click="closeMenu">여행정보</RouterLink>
           <RouterLink :to="{ name: 'location' }" class="mobile-nav-link" @click="closeMenu">여행지역</RouterLink>
           
-          <a href="#" @click.prevent="goPlanner" class="mobile-nav-link">AI플래너</a>
+          <a href="#" @click.prevent="goPlanner" class="mobile-nav-link">스마트플래너</a>
 
           <RouterLink :to="{ name: 'community' }" class="mobile-nav-link" @click="closeMenu">커뮤니티</RouterLink>
           

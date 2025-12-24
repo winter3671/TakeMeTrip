@@ -382,7 +382,6 @@ class CourseSaveView(APIView):
             end_date=data.get('end_date', datetime.today())
         )
 
-        # 프론트엔드에서 AI 결과('plan')를 그대로 보내준다고 가정
         plans = data.get('plan', [])
         
         for day_plan in plans:
@@ -390,7 +389,7 @@ class CourseSaveView(APIView):
             schedule = day_plan.get('schedule', [])
             
             for idx, item in enumerate(schedule):
-                # 여행지(spot)나 식당(meal)인 경우에만 저장 (숙소나 이동 시간 등은 제외 가능)
+                # 여행지(spot)나 식당(meal)인 경우에만 저장
                 if item.get('type') in ['spot', 'meal', 'accommodation']:
                     trip_data = item.get('data')
                     if trip_data and 'id' in trip_data:
@@ -407,7 +406,6 @@ class MyCourseListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # 내가 만든 코스만 가져오기
         courses = Course.objects.filter(user=request.user).order_by('-created_at')
         serializer = CourseSerializer(courses, many=True)
         return Response(serializer.data)

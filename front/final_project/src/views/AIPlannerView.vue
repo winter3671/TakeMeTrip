@@ -5,8 +5,8 @@
       <div class="icon-wrapper">
         <span class="header-emoji">✨</span>
       </div>
-      <h1>AI 여행 플래너</h1>
-      <p>날짜와 장소만 알려주세요. 나머지는 AI가 완벽하게 계획해 드릴게요.</p>
+      <h1>취향 맞춤 여행 플래너</h1>
+      <p>날짜와 장소만 알려주세요. 당신의 취향에 딱 맞는 여행 일정을 만들어드려요.</p>
     </div>
 
     <div v-if="!plannerStore.generatedPlan" class="form-card">
@@ -31,9 +31,14 @@
               v-model="formData.end_date" 
               class="custom-input" 
               :min="minEndDate"
+              :max="maxEndDate"
             />
           </div>
         </div>
+        <p class="limit-info">
+          <span class="info-icon">💡</span>
+          최적의 경로 계산을 위해 여행 기간은 최대 <strong>4박 5일</strong>까지만 설정 가능합니다.
+        </p>
       </div>
 
       <hr class="divider">
@@ -74,10 +79,10 @@
         @click="handleGenerate"
         :disabled="isGenerating"
       >
-        <span v-if="!isGenerating">AI 여행 계획 만들기 ✨</span>
+        <span v-if="!isGenerating">맞춤형 여행 계획 만들기 ✨</span>
         <span v-else class="loading-content">
           <span class="spinner"></span>
-          AI가 최적의 경로를 계산 중입니다...
+          최적의 경로를 계산 중입니다...
         </span>
       </button>
     </div>
@@ -160,14 +165,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlannerStore } from '@/stores/planners';
-import { useAccountStore } from '@/stores/accounts'; // ★ 추가: 로그인 체크용
+import { useAccountStore } from '@/stores/accounts';
 
 const router = useRouter();
 const plannerStore = usePlannerStore();
-const accountStore = useAccountStore(); // ★ 추가
+const accountStore = useAccountStore();
 
 const formData = ref({
   start_date: '',
@@ -191,6 +196,37 @@ const getTodayDate = () => {
 };
 const minDate = getTodayDate();
 const minEndDate = computed(() => formData.value.start_date || minDate);
+
+const maxEndDate = computed(() => {
+  if (!formData.value.start_date) return null;
+  
+  const start = new Date(formData.value.start_date);
+  const max = new Date(start);
+  max.setDate(start.getDate() + 4);
+  
+  const year = max.getFullYear();
+  const month = String(max.getMonth() + 1).padStart(2, '0');
+  const day = String(max.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+});
+// 시작일이 바뀔 때 종료일이 범위를 벗어나면 자동 조정
+watch(() => formData.value.start_date, (newStart) => {
+  if (!newStart) return;
+
+  // 종료일이 이미 선택되어 있는데,
+  if (formData.value.end_date) {
+    // 1) 종료일이 시작일보다 이전이면 -> 시작일로 맞춤
+    if (formData.value.end_date < newStart) {
+      formData.value.end_date = newStart;
+    }
+    // 2) 종료일이 최대 4박(maxEndDate)을 넘어가면 -> 최대일로 맞춤
+    else if (maxEndDate.value && formData.value.end_date > maxEndDate.value) {
+      alert("여행 기간은 최대 4박 5일까지만 설정 가능합니다.");
+      formData.value.end_date = maxEndDate.value;
+    }
+  }
+});
 
 const availableCities = computed(() => {
   if (!formData.value.region_id) return [];
@@ -731,6 +767,26 @@ onMounted(() => {
 .acc-card { 
   background-color: #f0f8ff; 
   border-color: #cce5ff; 
+}
+
+.limit-info {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.5px;
+  word-break: keep-all;
+}
+
+.limit-info strong {
+  color: #7B9DFF;
+  font-weight: 600;
+}
+
+.info-icon {
+  font-size: 14px;
 }
 
 @keyframes fadeIn { 
