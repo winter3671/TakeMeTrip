@@ -3,7 +3,7 @@
     <div class="course-section">
       
       <div class="list-header">
-        <h2 class="header-title">#{{ selectedTag }}</h2>
+        <h2 class="header-title">#{{ selectedTag }} <span v-if="selectedSubTag && selectedSubTag !== '전체'" style="font-size: 0.8em; color: #666;"> > {{ selectedSubTag }}</span></h2>
         <div class="header-utils">
           <span class="total-count">총 {{ store.totalCount }} 건</span>
           <div class="sort-options">
@@ -21,7 +21,7 @@
         <div v-if="isLoading" class="status-msg">로딩 중...</div>
         
         <div v-else-if="store.trips.length === 0" class="status-msg empty">
-          등록된 여행코스가 없습니다.
+          해당 지역에 등록된 여행지가 없습니다.
         </div>
 
         <div v-else>
@@ -36,23 +36,8 @@
       </div>
 
       <div class="pagination" v-if="totalPages > 0">
-        
-        <button 
-          class="page-btn move" 
-          :disabled="currentPage === 1" 
-          @click="changePage(1)"
-        >
-          &lt;&lt;
-        </button>
-
-        <button 
-          class="page-btn move" 
-          :disabled="currentPage === 1" 
-          @click="changePage(currentPage - 1)"
-        >
-          &lt;
-        </button>
-
+        <button class="page-btn move" :disabled="currentPage === 1" @click="changePage(1)">&lt;&lt;</button>
+        <button class="page-btn move" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">&lt;</button>
         <button 
           v-for="page in visiblePages" 
           :key="page" 
@@ -62,23 +47,8 @@
         >
           {{ page }}
         </button>
-
-        <button 
-          class="page-btn move" 
-          :disabled="currentPage === totalPages" 
-          @click="changePage(currentPage + 1)"
-        >
-          &gt;
-        </button>
-
-        <button 
-          class="page-btn move" 
-          :disabled="currentPage === totalPages" 
-          @click="changePage(totalPages)"
-        >
-          &gt;&gt;
-        </button>
-
+        <button class="page-btn move" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">&gt;</button>
+        <button class="page-btn move" :disabled="currentPage === totalPages" @click="changePage(totalPages)">&gt;&gt;</button>
       </div>
 
     </div>
@@ -126,13 +96,13 @@
       <hr>
       <div class="tag-list category-list">
         <button
-        v-for="tag in categoryTags"
-        :key="tag"
-        class="tag-btn"
-        :class="{ active: selectedCategoryTag === tag }"
-        @click="selectCategoryTag(tag)"
-      >
-        #{{ tag }}
+          v-for="tag in categoryTags"
+          :key="tag"
+          class="tag-btn"
+          :class="{ active: selectedCategoryTag === tag }"
+          @click="selectCategoryTag(tag)"
+        >
+          #{{ tag }}
         </button>
       </div>
     </section>
@@ -142,25 +112,21 @@
 <script setup>
 import LocationCard from '@/components/LocationCard.vue';
 import { useTripStore } from '@/stores/trips';
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 const router = useRouter()
+const route = useRoute()
 
 const store = useTripStore()
 const isLoading = ref(false)
 const currentPage = ref(1)
-const currentCategoryId = ref(null)
 const currentSort = ref('-created_at')
-
 const userLocation = ref(null)
 
 const regionTags = [
-  '전체', '서울', '인천', '대전', 
-  '대구', '광주', '부산', '울산', 
-  '세종', '경기', '강원', '충북', 
-  '충남', '경북', '경남', '전북', 
-  '전남', '제주'
+  '전체', '서울', '인천', '대전', '대구', '광주', '부산', '울산', '세종', 
+  '경기', '강원', '충북', '충남', '경북', '경남', '전북', '전남', '제주'
 ];
 
 const subRegionData = {
@@ -243,7 +209,6 @@ const loadData = async (page) => {
       }
     }
 
-    // 카테고리 필터
     if (selectedCategoryTag.value) {
       const categories = await store.getCategories();
       const target = categories.find(c => c.name === selectedCategoryTag.value);
@@ -257,9 +222,8 @@ const loadData = async (page) => {
       }
     }
 
-    // 거리순 정렬
     if (!params.ordering || (params.ordering === 'distance' && !userLocation.value)) {
-         params.ordering = '-created_at';
+          params.ordering = '-created_at';
     }
     if (params.ordering === 'distance' && userLocation.value) {
       params.lat = userLocation.value.lat;
@@ -336,13 +300,64 @@ const goDetail = (id) => {
   router.push({ name: 'trip-detail', params: { id } })
 }
 
+// ★ [핵심] 도시 이름으로 지역(도)과 세부 지역을 찾아 설정하는 함수
+const applyFilterFromQuery = (queryName) => {
+  if (!queryName) return;
+
+  // 1. 메인 지역 태그(서울, 부산 등)와 일치하는 경우
+  if (regionTags.includes(queryName)) {
+    selectedTag.value = queryName;
+    selectedSubTag.value = '전체';
+  } 
+  // 2. 세부 도시(강릉, 경주 등)인 경우 -> 부모 지역(강원, 경북)을 찾아서 설정
+  else {
+    let foundParent = null;
+    let foundSub = null;
+
+    // subRegionData를 순회하며 찾기
+    for (const [parentRegion, cities] of Object.entries(subRegionData)) {
+      // cities 배열 안에 queryName을 포함하는 도시가 있는지 확인 (예: '강릉' -> '강릉시')
+      const matchedCity = cities.find(city => city.includes(queryName));
+      
+      if (matchedCity) {
+        foundParent = parentRegion;
+        foundSub = matchedCity;
+        break;
+      }
+    }
+
+    if (foundParent) {
+      selectedTag.value = foundParent;
+      selectedSubTag.value = foundSub;
+    } else {
+      selectedTag.value = '전체';
+    }
+  }
+
+  currentPage.value = 1;
+  loadData(1);
+};
+
+// URL 파라미터가 바뀌면(뒤로가기 등) 필터 재적용
+watch(() => route.query.category, (newRegion) => {
+  applyFilterFromQuery(newRegion);
+});
+
 onMounted(() => {
   getUserLocation();
-  loadData(1);
+  
+  const queryRegion = route.query.category;
+  if (queryRegion) {
+    applyFilterFromQuery(queryRegion);
+  } else {
+    selectedTag.value = '전체';
+    loadData(1);
+  }
 });
 </script>
 
 <style scoped>
+/* 기존 스타일과 동일 */
 .course-container {
   display: flex; 
   width: 100%; 
@@ -536,7 +551,7 @@ onMounted(() => {
   max-height: 0;
   opacity: 0;
   margin-top: 0;
-  padding-top: 0;    
+  padding-top: 0;     
   padding-bottom: 0;
 }
 </style>
