@@ -239,92 +239,74 @@ def recommend_liked_places(request):
 @permission_classes([IsAuthenticated])
 def recommend_by_ai(request):
     user = request.user
+    city_id = request.query_params.get('city_id')
+    category_name = request.query_params.get('category_name') # 추가
+    lat = request.query_params.get('lat')
+    lng = request.query_params.get('lng')
+    count = int(request.query_params.get('count', 10))
     
     my_wishlists = Wishlist.objects.filter(user=user).select_related('trip', 'trip__city', 'trip__category')
-    
-    if not my_wishlists.exists():
-        random_trips = Trip.objects.filter(status='active').order_by('-recommendation_score')[:20]
-        selected_trips = random.sample(list(random_trips), min(len(random_trips), 10))
-        return Response(TripListSerializer(selected_trips, many=True).data)
+    my_liked_trip_ids = set(my_wishlists.values_list('trip_id', flat=True))
 
     liked_city_ids = []
     liked_category_ids = []
-    my_liked_trip_ids = set()
-
-    for w in my_wishlists:
-        trip = w.trip
-        my_liked_trip_ids.add(trip.id)
-        
-        if trip.city:
-            liked_city_ids.append(trip.city.id)
-        if trip.category:
-            liked_category_ids.append(trip.category.id)
+    if my_wishlists.exists():
+        for w in my_wishlists:
+            if w.trip.city_id: liked_city_ids.append(w.trip.city_id)
+            if w.trip.category_id: liked_category_ids.append(w.trip.category_id)
 
     city_counter = Counter(liked_city_ids)
     category_counter = Counter(liked_category_ids)
 
-    similar_user_ids = Wishlist.objects.filter(trip_id__in=my_liked_trip_ids)\
-                                       .exclude(user=user)\
-                                       .values_list('user_id', flat=True)
-    
-    similar_people_picks = Wishlist.objects.filter(user_id__in=similar_user_ids)\
-                                           .exclude(trip_id__in=my_liked_trip_ids)\
-                                           .values_list('trip_id', flat=True)
-    
-    collab_counter = Counter(similar_people_picks)
+    # 협업 필터링 (가중치 낮게 유지)
+    similar_user_ids = Wishlist.objects.filter(trip_id__in=my_liked_trip_ids).exclude(user=user).values_list('user_id', flat=True)
+    collab_counter = Counter(Wishlist.objects.filter(user_id__in=similar_user_ids).exclude(trip_id__in=my_liked_trip_ids).values_list('trip_id', flat=True))
 
     candidates = Trip.objects.filter(status='active').exclude(id__in=my_liked_trip_ids)
+    
+    # 사용자 요구사항: 지역 고정
+    if city_id:
+        candidates = candidates.filter(city_id=city_id)
+    
+    # 카테고리 필터 (숙소 등)
+    if category_name:
+        candidates = candidates.filter(category__name__contains=category_name)
 
     scored_trips = []
+    
+    target_lat = float(lat) if lat else None
+    target_lng = float(lng) if lng else None
 
     for trip in candidates:
         score = 0
-        
         if trip.category_id in category_counter:
             score += category_counter[trip.category_id] * 200
-            
         if trip.city_id in city_counter:
             score += city_counter[trip.city_id] * 100
-            
         if trip.id in collab_counter:
             score += collab_counter[trip.id] * 10
             
         score += trip.recommendation_score
+        
+        # 사용자 요구사항: 근접 장소 우선 추천
+        if target_lat and target_lng and trip.mapy and trip.mapx:
+            dist_sq = (trip.mapy - target_lat)**2 + (trip.mapx - target_lng)**2
+            # 거리가 가까울수록 가점 (단위가 크므로 적절히 조정)
+            if dist_sq < 0.01: # 약 1km 반경 근처 (매우 대략적)
+                score += 500
+            elif dist_sq < 0.04: # 약 2km 반경
+                score += 200
 
-        if score > 50:
+        if score > 30:
             scored_trips.append((score, trip))
 
     scored_trips.sort(key=lambda x: x[0], reverse=True)
     
-    top_50_candidates = [trip for score, trip in scored_trips[:50]]
-
-    final_trips = []
-
-    if len(top_50_candidates) <= 10:
-        final_trips = top_50_candidates
-    else:
-        high_tier = top_50_candidates[:10]
-        lower_tier = top_50_candidates[10:]
-
-        num_from_high = random.randint(3, min(len(high_tier), 5))
-        selected_high = random.sample(high_tier, num_from_high)
-
-        num_needed = 10 - len(selected_high)
-        selected_low = random.sample(lower_tier, min(len(lower_tier), num_needed))
-
-        final_trips = selected_high + selected_low
-        random.shuffle(final_trips)
-
-    if len(final_trips) < 10:
-        needed = 10 - len(final_trips)
-        current_ids = [t.id for t in final_trips]
-        
-        remaining = Trip.objects.filter(status='active')\
-                                .exclude(id__in=my_liked_trip_ids)\
-                                .exclude(id__in=current_ids)\
-                                .order_by('-recommendation_score')[:needed]
-        
-        final_trips.extend(remaining)
+    # 상위 후보군 중 랜덤하게 섞어서 다양성 확보 (리롤 대응)
+    pool_size = min(len(scored_trips), count * 3)
+    top_candidates = [t for s, t in scored_trips[:pool_size]]
+    
+    final_trips = random.sample(top_candidates, min(len(top_candidates), count))
 
     serializer = TripListSerializer(final_trips, many=True, context={'request': request})
     return Response(serializer.data)

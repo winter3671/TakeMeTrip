@@ -32,17 +32,22 @@ export const usePlannerStore = defineStore('planner', () => {
           Authorization: `Bearer ${accountStore.token}`
         }
       })
-      
+
       generatedPlan.value = res.data
       return res.data
     } catch (error) {
       console.error('플랜 생성 실패:', error)
-      
+
       if (error.response) {
-        if (error.response.status >= 500 || typeof error.response.data === 'string') {
+        if (error.response.status === 401) {
+          alert("인증 세션이 만료되었습니다. 다시 로그인해주세요.")
+          accountStore.logOut()
+        } else if (error.response.status >= 500 || typeof error.response.data === 'string') {
           alert("서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
         } else {
-          alert(JSON.stringify(error.response.data))
+          // 상세 에러가 있는 경우 친절하게 표시
+          const msg = error.response.data?.detail || "정보가 올바르지 않습니다."
+          alert(`플랜 생성 실패: ${msg}`)
         }
       } else {
         alert("네트워크 오류가 발생했습니다.")
@@ -79,17 +84,17 @@ export const usePlannerStore = defineStore('planner', () => {
           Authorization: `Bearer ${accountStore.token}`
         }
       })
-      
+
       alert('여행 코스가 저장되었습니다! 🗺️')
       return true
     } catch (error) {
       console.error('=== 코스 저장 실패 ===')
-      console.error('error:', error)
-      console.error('error.response:', error.response)
-      console.error('error.response.data:', error.response?.data)
-      
-      if (error.response?.data) {
-        alert(`코스 저장 실패: ${JSON.stringify(error.response.data)}`)
+      if (error.response?.status === 401) {
+        alert("인증 세션이 만료되었습니다. 다시 로그인해주세요.")
+        accountStore.logOut()
+      } else if (error.response?.data) {
+        const msg = error.response.data?.detail || JSON.stringify(error.response.data)
+        alert(`코스 저장 실패: ${msg}`)
       } else {
         alert('코스 저장 중 오류가 발생했습니다.')
       }
@@ -97,10 +102,10 @@ export const usePlannerStore = defineStore('planner', () => {
     }
   }
 
-  return { 
-    regions, 
-    generatedPlan, 
-    getLocations, 
+  return {
+    regions,
+    generatedPlan,
+    getLocations,
     generatePlan,
     saveCourse
   }

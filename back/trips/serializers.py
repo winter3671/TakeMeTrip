@@ -21,6 +21,8 @@ class TripListSerializer(serializers.ModelSerializer):
             'thumbnail_image', 
             'region_name', 
             'city_name', 
+            'region_id',
+            'city_id',
             'category_name', 
             'recommendation_score',
             'mapx', 

@@ -18,7 +18,7 @@ export const useTripStore = defineStore('trip', () => {
   const getTrips = async (params) => {
     try {
       const res = await axios.get(`${API_URL}/`, { params })
-      
+
       // DRF 페이지네이션 응답 구조 ({ count: 100, results: [...] }) 처리
       if (res.data.results) {
         trips.value = res.data.results
@@ -60,7 +60,7 @@ export const useTripStore = defineStore('trip', () => {
   // 4. 홈 화면 추천 (카테고리별 or 전체 랜덤)
   const getRandomTrips = async (category) => {
     try {
-      const params = category ? { category } : { count : 10 }
+      const params = category ? { category } : { count: 10 }
       const endpoint = category ? `${API_URL}/recommend/category/` : `${API_URL}/random/`
       const res = await axios.get(endpoint, { params })
       return res.data
@@ -80,6 +80,9 @@ export const useTripStore = defineStore('trip', () => {
       return res.data
     } catch (error) {
       console.error('찜 목록 로드 실패:', error)
+      if (error.response?.status === 401) {
+        accountStore.logOut()
+      }
       return []
     }
   }
@@ -94,75 +97,82 @@ export const useTripStore = defineStore('trip', () => {
       const res = await axios.post(`${API_URL}/${tripId}/like/`, {}, {
         headers: { Authorization: `Bearer ${accountStore.token}` }
       })
-      return res.data.is_liked 
+      return res.data.is_liked
     } catch (error) {
       console.error('좋아요 실패:', error)
+      if (error.response?.status === 401) {
+        alert("인증 세션이 만료되었습니다. 다시 로그인해주세요.")
+        accountStore.logOut()
+      }
       return null
     }
   }
 
   // 7. AI 추천
-  const getAiRecommendations = async () => {
+  const getAiRecommendations = async (params = {}) => {
     try {
       const res = await axios.get(`${API_URL}/recommend/ai/`, {
+        params,
         headers: { Authorization: `Bearer ${accountStore.token}` }
       })
       return res.data
     } catch (error) {
       console.error('AI 추천 로드 실패:', error)
+      if (error.response?.status === 401) {
+        accountStore.logOut()
+      }
       return []
     }
   }
 
-const getMyCourses = async () => {
-  const accountStore = useAccountStore()
+  const getMyCourses = async () => {
+    const accountStore = useAccountStore()
 
-  if (!accountStore.token) {
-    console.log('토큰 없음 - 로그인 필요')
-    return []
-  }
-
-  try {
-    const res = await axios({
-      method: 'get',
-      url: `${API_URL}/courses/`,
-      headers: { 
-        Authorization: `Bearer ${accountStore.token}` 
-      }
-    })
-    // DRF pagination 처리
-    let courses = res.data.results ? res.data.results : res.data
-
-    // 배열인지 확인
-    if (!Array.isArray(courses)) {
-      console.error('코스 데이터가 배열이 아닙니다:', courses)
+    if (!accountStore.token) {
+      console.log('토큰 없음 - 로그인 필요')
       return []
     }
-    
-    // null이나 undefined 제거
-    const validCourses = courses.filter(course => {
-      if (!course) {
-        console.warn('null 또는 undefined 코스 발견')
-        return false
+
+    try {
+      const res = await axios({
+        method: 'get',
+        url: `${API_URL}/courses/`,
+        headers: {
+          Authorization: `Bearer ${accountStore.token}`
+        }
+      })
+      // DRF pagination 처리
+      let courses = res.data.results ? res.data.results : res.data
+
+      // 배열인지 확인
+      if (!Array.isArray(courses)) {
+        console.error('코스 데이터가 배열이 아닙니다:', courses)
+        return []
       }
-      if (!course.id) {
-        console.warn('ID 없는 코스:', course)
-        return false
+
+      // null이나 undefined 제거
+      const validCourses = courses.filter(course => {
+        if (!course) {
+          console.warn('null 또는 undefined 코스 발견')
+          return false
+        }
+        if (!course.id) {
+          console.warn('ID 없는 코스:', course)
+          return false
+        }
+        return true
+      })
+
+      return validCourses
+
+    } catch (error) {
+      console.error('=== 코스 목록 로드 실패 ===')
+      if (error.response?.status === 401) {
+        accountStore.logOut()
       }
-      return true
-    })
-    
-    return validCourses
-    
-  } catch (error) {
-    console.error('=== 코스 목록 로드 실패 ===')
-    console.error('error:', error)
-    console.error('error.response:', error.response)
-    console.error('error.response?.data:', error.response?.data)
-    console.error('error.response?.status:', error.response?.status)
-    return []
+      return []
+    }
   }
-}
 
   const getTripDetail = async (id) => {
     try {
@@ -175,14 +185,14 @@ const getMyCourses = async () => {
     }
   }
 
-  return { 
-    trips, 
-    totalCount, 
+  return {
+    trips,
+    totalCount,
     categories,
     getTrips,
-    getCategories, 
-    getRandomBannerTrips, 
-    getRandomTrips, 
+    getCategories,
+    getRandomBannerTrips,
+    getRandomTrips,
     getMyWishlist,
     toggleLike,
     getAiRecommendations,
