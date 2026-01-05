@@ -77,6 +77,9 @@ class Trip(models.Model):
     rest_date = models.CharField(max_length=500, blank=True, null=True, verbose_name="휴무일")
     use_time = models.CharField(max_length=500, blank=True, null=True, verbose_name="이용시간")
 
+    open_time = models.TimeField(null=True, blank=True, verbose_name="영업 시작 시간")
+    close_time = models.TimeField(null=True, blank=True, verbose_name="영업 종료 시간")
+
     class Meta:
         db_table = 'trips'
 
