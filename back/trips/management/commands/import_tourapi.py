@@ -328,16 +328,17 @@ class Command(BaseCommand):
             if intro_data.get('use_time'):
                 update_defaults['use_time'] = intro_data.get('use_time')
 
-            # [추가] 이용시간 규격화 (Normalization) 로직
+            # [추가] 운영 및 휴무 정보 구조화 (JSON)
             use_time_source = intro_data.get('use_time') or (existing_trip.use_time if existing_trip else '')
-            ot, ct = self.parse_business_hours(use_time_source)
-            if ot: update_defaults['open_time'] = ot
-            if ct: update_defaults['close_time'] = ct
-
-            # [추가] 휴무 정보 데이터화 로직
             rest_date_source = intro_data.get('rest_date') or (existing_trip.rest_date if existing_trip else '')
-            holiday_dict = self.parse_holiday_info(rest_date_source)
-            update_defaults['holiday_data'] = holiday_dict
+            
+            operating_info = self.parse_operating_hours(use_time_source, rest_date_source)
+            update_defaults['operating_info'] = operating_info
+            
+            # 대표 시간 (open_time, close_time) 추출 - 필터링용
+            first_day_info = next(iter(operating_info['weekly'].values()), {})
+            if first_day_info.get('open'): update_defaults['open_time'] = first_day_info['open']
+            if first_day_info.get('close'): update_defaults['close_time'] = first_day_info['close']
 
             # [추가] 체류 시간 유추 로직
             content_type_id = item.get('contenttypeid', '12')
@@ -385,41 +386,89 @@ class Command(BaseCommand):
             
         return duration
 
-    def parse_holiday_info(self, rest_text):
-        """'매주 월요일', '연중무휴' 등의 텍스트에서 요일별 휴무 정보 추출 (JSON 구조용)"""
-        results = {
-            'weekly': [],   # ["Mon", "Tue"]
-            'special': [],  # ["new_year", "seollal", "chuseok"]
-            'raw': rest_text # 원본 텍스트 보관
-        }
+    def parse_operating_hours(self, use_time, rest_date):
+        """이용 시간(use_time)과 휴무 정보(rest_date)를 통합하여 구조화된 JSON 반환"""
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        kor_to_eng = {"월": "Mon", "화": "Tue", "수": "Wed", "목": "Thu", "금": "Fri", "토": "Sat", "일": "Sun"}
         
-        if not rest_text or '연중무휴' in rest_text or '무휴' in rest_text:
-            return results
-
-        # 1. 특수 공휴일 체크
-        special_map = {
-            '1월 1일': 'new_year', '신정': 'new_year',
-            '설날': 'seollal', '설·추석': 'seollal', # 설·추석은 둘 다 포함
-            '추석': 'chuseok'
+        res = {
+            "weekly": {day: {"open": None, "close": None, "break": None, "last_order": None, "is_closed": False} for day in days},
+            "special": [],
+            "raw": {"use_time": use_time, "rest_date": rest_date}
         }
-        for kw, key in special_map.items():
-            if kw in rest_text:
-                if key == 'seollal' and '설·추석' in rest_text:
-                    results['special'].append('seollal')
-                    results['special'].append('chuseok')
+
+        # 1. 휴무 정보(rest_date) 파싱
+        if rest_date:
+            if not any(kw in rest_date for kw in ["연중무휴", "무휴"]):
+                # 공휴일 체크
+                special_map = {"신정": "new_year", "설날": "seollal", "추석": "chuseok", "1월 1일": "new_year"}
+                for kw, key in special_map.items():
+                    if kw in rest_date: 
+                        if key not in res["special"]: res["special"].append(key)
+                
+                # 정기 휴무 체크
+                for kor, eng in kor_to_eng.items():
+                    if f"{kor}요일" in rest_date or f"매주 {kor}" in rest_date:
+                        res["weekly"][eng]["is_closed"] = True
+
+        # 2. 이용 시간(use_time) 파싱
+        if use_time:
+            import re
+            # 문장 분리 (줄바꿈 또는 구분자)
+            segments = re.split(r'<br>|\n|\|', use_time)
+            
+            for seg in segments:
+                if not seg.strip(): continue
+                
+                # 해당 문장이 적용되는 요일 범위 찾기 (예: "화요일~수요일", "평일", "주말")
+                target_days = []
+                range_match = re.search(r'([월화수목금토일])요일?\s*[~-]\s*([월화수목금토일])요일?', seg)
+                if range_match:
+                    start_kor, end_kor = range_match.groups()
+                    start_idx = days.index(kor_to_eng[start_kor])
+                    end_idx = days.index(kor_to_eng[end_kor])
+                    if start_idx <= end_idx:
+                        target_days = days[start_idx:end_idx+1]
+                    else: # 예: "토요일~월요일"
+                        target_days = days[start_idx:] + days[:end_idx+1]
+                elif "평일" in seg:
+                    target_days = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+                elif "주말" in seg:
+                    target_days = ["Sat", "Sun"]
                 else:
-                    if key not in results['special']:
-                        results['special'].append(key)
+                    # 개별 요일 체크 (예: "월요일")
+                    single_day_match = re.search(r'([월화수목금토일])요일?', seg)
+                    if single_day_match:
+                        target_days = [kor_to_eng[single_day_match.group(1)]]
+                    else:
+                        # 요일 언급이 없으면 모든 요일
+                        target_days = days
 
-        # 2. 정기 요일 휴무 체크
-        day_map = {
-            '월': 'Mon', '화': 'Tue', '수': 'Wed', '목': 'Thu', '금': 'Fri', '토': 'Sat', '일': 'Sun'
-        }
-        for kor, eng in day_map.items():
-            if f"{kor}요일" in rest_text or f"매주 {kor}" in rest_text:
-                results['weekly'].append(eng)
+                # 운영 시간 추출
+                ot, ct = self._extract_time_range(seg)
+                
+                # 준비시간/브레이크 추출
+                bk_match = re.search(r'(?:준비시간|브레이크|Break\s*time)[:\s]*(\d{1,2}[:시]\d{0,2}\s*[~-]\s*\d{1,2}[:시]\d{0,2})', seg, re.I)
+                bk_time = None
+                if bk_match:
+                    bk_parsed = self._extract_time_range(bk_match.group(1))
+                    if bk_parsed[0]: bk_time = bk_parsed
 
-        return results
+                # 라스트오더 추출
+                lo_match = re.search(r'(?:라스트\s*오더|마지막\s*주문)[:\s]*(\d{1,2}[:시]\d{0,2})', seg, re.I)
+                lo_time = None
+                if lo_match:
+                    lo_parsed = self._extract_time_range(lo_match.group(1))
+                    if lo_parsed[0]: lo_time = lo_parsed[0]
+
+                # 추출된 데이터를 대상 요일에 할당
+                for d in target_days:
+                    if ot: res["weekly"][d]["open"] = ot
+                    if ct: res["weekly"][d]["close"] = ct
+                    if bk_time: res["weekly"][d]["break"] = bk_time
+                    if lo_time: res["weekly"][d]["last_order"] = lo_time
+
+        return res
 
     def parse_date(self, date_str):
         if not date_str or len(str(date_str)) != 8:
@@ -430,73 +479,33 @@ class Command(BaseCommand):
         except:
             return None
 
-    def parse_business_hours(self, time_str):
-        """계절별/월별 정보를 인식하여 현재 시점에 가장 적합한 운영 시간 추출"""
-        if not time_str:
-            return None, None
-        
-        import re
-        from datetime import datetime
-        current_month = datetime.now().month
-
-        # <br>이나 공백 등으로 문장을 분리
-        segments = re.split(r'<br>|\n|\|', time_str)
-        
-        season_results = []
-        
-        for seg in segments:
-            # 1. 월 범위 추출 (예: 3월~10월, 11~2월)
-            month_match = re.search(r'(\d+)\s*월?\s*[~-]\s*(\d+)\s*월?', seg)
-            # 2. 시간 범위 추출 (06:00~18:00 등)
-            time_match = re.search(r'(\d{1,2}(?::\d{2}|시))', seg)
-            
-            if time_match:
-                # 해당 라인에서 시간 쌍 추출 (기존 logic 활용)
-                ot, ct = self._extract_time_range(seg)
-                if not ot: continue
-                
-                if month_match:
-                    start_m, end_m = map(int, month_match.groups())
-                    # 월 범위 계산 (예: 11~2월 같은 역전 범위 처리)
-                    if start_m <= end_m:
-                        in_season = start_m <= current_month <= end_m
-                    else: # 11월 ~ 2월인 경우
-                        in_season = (current_month >= start_m or current_month <= end_m)
-                    
-                    if in_season:
-                        return ot, ct # 현재 계절에 맞으면 즉시 반환
-                    
-                season_results.append((ot, ct))
-
-        # 맞는 계절을 못 찾았다면 첫 번째로 발견된 시간 반환
-        if season_results:
-            return season_results[0]
-            
-        # 마지막 보루: 전체 텍스트에서 가장 먼저 보이는 시간 쌍이라도 찾기
-        return self._extract_time_range(time_str)
-
     def _extract_time_range(self, text):
-        """문자열에서 단일 시간 쌍(HH:MM~HH:MM) 추출 Helper"""
+        """문자열에서 시간 정보를 추출 (HH:MM~HH:MM 또는 HH:MM)"""
         import re
 
         def sanitize_time(h, m):
-            h, m = int(h), int(m)
-            if h >= 24: # 24:00 등 잘못된 시간 처리
-                h, m = 23, 59
+            h, m = int(h), int(m or 0)
+            if h >= 24: h, m = 23, 59
             return f"{h:02d}:{m:02d}"
 
-        # 1. HH:MM 형식
-        match_hm = re.search(r'(\d{1,2}):(\d{2})\s*[~-]\s*(\d{1,2}):(\d{2})', text)
-        if match_hm:
-            oh, om, ch, cm = match_hm.groups()
+        # 1. HH:MM~HH:MM 형식
+        match_range = re.search(r'(\d{1,2})[:](\d{2})\s*[~-]\s*(\d{1,2})[:](\d{2})', text)
+        if match_range:
+            oh, om, ch, cm = match_range.groups()
             return sanitize_time(oh, om), sanitize_time(ch, cm)
         
-        # 2. HH시 형식
-        match_si = re.search(r'(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~-]\s*(\d{1,2})시(?:\s*(\d{1,2})분)?', text)
-        if match_si:
-            oh, om, ch, cm = match_si.groups()
-            return sanitize_time(oh, om or 0), sanitize_time(ch, cm or 0)
+        # 2. HH시 MM분 ~ HH시 MM분 형식
+        match_si_range = re.search(r'(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~-]\s*(\d{1,2})시(?:\s*(\d{1,2})분)?', text)
+        if match_si_range:
+            oh, om, ch, cm = match_si_range.groups()
+            return sanitize_time(oh, om), sanitize_time(ch, cm)
         
+        # 3. 단일 시간 (HH:MM 또는 HH시 MM분)
+        match_single = re.search(r'(\d{1,2})[:시](?:\s*(\d{1,2})분?)?', text)
+        if match_single:
+            h, m = match_single.groups()
+            return sanitize_time(h, m), None
+
         return None, None
         
     def create_tags(self, trip, item, common_data, intro_data):

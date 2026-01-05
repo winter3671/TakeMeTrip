@@ -84,8 +84,8 @@ class Trip(models.Model):
     average_duration = models.IntegerField(default=60, verbose_name="평균 체류 시간(분)")
 
     # 운영 및 휴무 정보를 통합 저장하는 JSON 필드
-    # 예: {"weekly": ["Mon"], "special": ["new_year", "seollal"], "raw": "매주 월요일, 신정 휴무"}
-    holiday_data = models.JSONField(default=dict, blank=True, verbose_name="휴무 정보 데이터")
+    # 예: {"weekly": {"Mon": {"open": "09:00", ...}}, "special": ["new_year"], "raw": "..."}
+    operating_info = models.JSONField(default=dict, blank=True, verbose_name="운영 및 휴무 정보 상세")
 
     class Meta:
         db_table = 'trips'
