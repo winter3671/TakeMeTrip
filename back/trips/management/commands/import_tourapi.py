@@ -7,7 +7,34 @@ from decouple import config
 from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Import data from TourAPI'
+    help = 'Import and enrich data from TourAPI (South Korea)'
+
+    # 메모리 캐시 변수 정의
+    _region_cache = {}   # {code: region_obj}
+    _city_cache = {}     # {(region_code, city_code): city_obj}
+    _category_cache = {} # {cat3_code: category_obj}
+
+    def _prefetch_caches(self):
+        """DB에 이미 저장된 지역, 시도, 카테고리를 메모리로 미리 로드"""
+        from trips.models import Region, City, Category
+        
+        # 1. 지역 캐시 (slug 기준)
+        for r in Region.objects.all():
+            self._region_cache[r.slug] = r
+        
+        # 2. 도시 캐시 (지역ID와 외부코드 조합)
+        for c in City.objects.all():
+            self._city_cache[(c.region_id, c.external_code)] = c
+            
+        # 3. 카테고리 캐시 (이름 기준)
+        for cat in Category.objects.all():
+            self._category_cache[cat.name] = cat
+            
+        self.stdout.write(self.style.SUCCESS(
+            f"🚀 [Cache Loaded] Regions: {len(self._region_cache)}, Cities: {len(self._city_cache)}, Categories: {len(self._category_cache)}"
+        ))
+
+    # python manage.py import_tourapi --area-code=1 --full
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -15,6 +42,11 @@ class Command(BaseCommand):
             type=str,
             nargs='?', 
             help='Area code (If empty, imports ALL regions)',
+        )
+        parser.add_argument(
+            '--full',
+            action='store_true',
+            help='Fetch detailed info (overview, tel, etc.) via additional API calls',
         )
 
     # 공통 정보 (개요, 홈페이지, 전화번호)
@@ -108,10 +140,14 @@ class Command(BaseCommand):
             return {}
         
     def handle(self, *args, **options):
+        # 수집 시작 전 캐시 워밍업
+        self._prefetch_caches()
+
         raw_key = config('TOUR_API_KEY')
         API_KEY = unquote(raw_key)
         BASE_URL = 'https://apis.data.go.kr/B551011/KorService2'
         
+        full_mode = options.get('full', False)
         today_str = datetime.now().strftime('%Y%m%d')
 
         ALL_REGIONS = {
@@ -128,7 +164,7 @@ class Command(BaseCommand):
             target_regions = ALL_REGIONS
 
         content_types = {
-            '12': '관광지', '14': '문화시설', '15': '축제/공연', '25': '여행코스',
+            '12': '관광지', '14': '문화시설', '15': '축제/공연',
             '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점'
         }
 
@@ -208,7 +244,7 @@ class Command(BaseCommand):
 
                         count = 0
                         for item in items:
-                            if self.process_item(item, area_code):
+                            if self.process_item(item, area_code, full_mode):
                                 count += 1
                                 total_imported_in_category += 1
                         
@@ -226,68 +262,164 @@ class Command(BaseCommand):
                 
                 self.stdout.write(self.style.SUCCESS(f'  -> Finished {c_name} in {area_name}: {total_imported_in_category} items'))    
 
-    def process_item(self, item, area_code):
+    def process_item(self, item, area_code, full_mode=False):
         try:
-            if not item.get('contentid') or not item.get('title'):
+            content_id = item.get('contentid')
+            # [필터링] 필수 데이터 검증: ID, 제목, 그리고 사진(firstimage)이 있어야 함
+            if not content_id or not item.get('title') or not item.get('firstimage'):
                 return False
+            
+            # 이미 존재하는지 확인
+            existing_trip = Trip.objects.filter(external_id=content_id).first()
             
             region = self.get_or_create_region(item.get('areacode', '1'))
             city = None
             if item.get('sigungucode'):
                 city = self.get_or_create_city(item.get('sigungucode'), area_code, region)
             
-            # contentTypeId가 없는 경우 기본값 처리
             content_type_id = item.get('contenttypeid', '12')
-            category = self.get_or_create_category(content_type_id)
+            cat3 = item.get('cat3', '')
+            category = self.get_or_create_category(content_type_id, cat3)
             
-            # 날짜 포맷 변환 (YYYYMMDD -> YYYY-MM-DD)
             start_date = self.parse_date(item.get('eventstartdate'))
             end_date = self.parse_date(item.get('eventenddate'))
 
             api_key = unquote(config('TOUR_API_KEY'))
 
-            content_id = item.get('contentid')
-            content_type_id = item.get('contenttypeid')
+            common_data = {}
+            intro_data = {}
 
-            common_data = self.get_detail_common(content_id, api_key)
+            # [핵심] full_mode가 켜져있고, 상세 정보가 없는 경우에만 API 호출
+            if full_mode:
+                if not existing_trip or not existing_trip.overview:
+                    common_data = self.get_detail_common(content_id, api_key)
+                    intro_data = self.get_detail_intro(content_id, content_type_id, api_key)
 
-            intro_data = self.get_detail_intro(content_id, content_type_id, api_key)
+            # 기본 데이터 매핑 (상세 API 호출 안 할 경우 item 데이터 활용)
+            update_defaults = {
+                'title': item.get('title', '')[:200],
+                'description': item.get('addr1', '')[:1000], # overview 없을 때 대용
+                'destination': item.get('addr1', '')[:100],
+                'region': region,
+                'city': city,
+                'category': category,
+                'thumbnail_image': item.get('firstimage', ''),
+                'price': 0,
+                'duration': 1,
+                'status': 'active',
+                'recommendation_score': self.calculate_score(item),
+                'start_date': start_date,
+                'end_date': end_date,
+                'mapx': float(item.get('mapx', 0.0) or 0.0),
+                'mapy': float(item.get('mapy', 0.0) or 0.0),
+            }
+
+            # 상세 정보가 있는 경우에만 필드 업데이트
+            if common_data.get('overview'):
+                update_defaults['overview'] = common_data.get('overview')
+            if common_data.get('tel') or intro_data.get('infocenter'):
+                update_defaults['tel'] = common_data.get('tel') or intro_data.get('infocenter')
+            if common_data.get('homepage'):
+                update_defaults['homepage'] = common_data.get('homepage')
+            if intro_data.get('parking'):
+                update_defaults['parking'] = intro_data.get('parking')
+            if intro_data.get('rest_date'):
+                update_defaults['rest_date'] = intro_data.get('rest_date')
+            if intro_data.get('use_time'):
+                update_defaults['use_time'] = intro_data.get('use_time')
+
+            # [추가] 이용시간 규격화 (Normalization) 로직
+            use_time_source = intro_data.get('use_time') or (existing_trip.use_time if existing_trip else '')
+            ot, ct = self.parse_business_hours(use_time_source)
+            if ot: update_defaults['open_time'] = ot
+            if ct: update_defaults['close_time'] = ct
+
+            # [추가] 휴무 정보 데이터화 로직
+            rest_date_source = intro_data.get('rest_date') or (existing_trip.rest_date if existing_trip else '')
+            holiday_dict = self.parse_holiday_info(rest_date_source)
+            update_defaults['holiday_data'] = holiday_dict
+
+            # [추가] 체류 시간 유추 로직
+            content_type_id = item.get('contenttypeid', '12')
+            cat3 = item.get('cat3', '')
+            title = item.get('title', '')
+            update_defaults['average_duration'] = self.calculate_average_duration(content_type_id, cat3, title)
 
             trip, created = Trip.objects.update_or_create(
-                external_id=item['contentid'],
-                defaults={
-                    'title': item.get('title', '')[:200],
-                    'description': item.get('overview', '')[:1000],
-                    'destination': item.get('addr1', '')[:100],
-                    'region': region,
-                    'city': city,
-                    'category': category,
-                    'thumbnail_image': item.get('firstimage', ''),
-                    'price': 0,
-                    'duration': 1,
-                    'status': 'active',
-                    'recommendation_score': self.calculate_score(item),
-                    'start_date': start_date,
-                    'end_date': end_date,
-                    'mapx': float(item.get('mapx', 0.0) or 0.0), # 경도
-                    'mapy': float(item.get('mapy', 0.0) or 0.0), # 위도
-                    'overview': common_data.get('overview', ''),
-                    'tel': common_data.get('tel') or intro_data.get('infocenter') or '',
-                    'homepage': common_data.get('homepage', ''),
-                    'parking': intro_data.get('parking', ''),
-                    'rest_date': intro_data.get('rest_date', ''),
-                    'use_time': intro_data.get('use_time', ''),
-                    }
-                )
+                external_id=content_id,
+                defaults=update_defaults
+            )
             
-            self.create_tags(trip, item)
+            self.create_tags(trip, item, common_data, intro_data)
 
             if created or not trip.images.exists():
                 self.fetch_images(trip, item['contentid'])
             return True
-            
+        
         except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error processing item {item.get('title')}: {str(e)}"))
             return False
+
+    def calculate_average_duration(self, content_type_id, cat3, title):
+        """장소의 성격에 따라 예상 체류 시간 및 안내 문구 유추"""
+        # 1. 카테고리별 기본값 설정
+        duration_map = {
+            '12': 90,  # 관광지
+            '14': 120, # 문화시설
+            '15': 180, # 축제/공연
+            '28': 150, # 레포츠
+            '32': 600, # 숙박
+            '38': 90,  # 쇼핑
+            '39': 60,  # 음식점
+        }
+        
+        duration = duration_map.get(str(content_type_id), 60)
+
+        # 2. 특정 키워드 보정
+        if '카페' in title or cat3 == 'A05020900':
+            duration = 45
+        elif any(kw in title for kw in ['공원', '해수욕장', '수목원', '테마파크']):
+            duration = 150
+        elif any(kw in title for kw in ['전망대', '정류장', '비석', '의거지']):
+            duration = 30
+            
+        return duration
+
+    def parse_holiday_info(self, rest_text):
+        """'매주 월요일', '연중무휴' 등의 텍스트에서 요일별 휴무 정보 추출 (JSON 구조용)"""
+        results = {
+            'weekly': [],   # ["Mon", "Tue"]
+            'special': [],  # ["new_year", "seollal", "chuseok"]
+            'raw': rest_text # 원본 텍스트 보관
+        }
+        
+        if not rest_text or '연중무휴' in rest_text or '무휴' in rest_text:
+            return results
+
+        # 1. 특수 공휴일 체크
+        special_map = {
+            '1월 1일': 'new_year', '신정': 'new_year',
+            '설날': 'seollal', '설·추석': 'seollal', # 설·추석은 둘 다 포함
+            '추석': 'chuseok'
+        }
+        for kw, key in special_map.items():
+            if kw in rest_text:
+                if key == 'seollal' and '설·추석' in rest_text:
+                    results['special'].append('seollal')
+                    results['special'].append('chuseok')
+                else:
+                    if key not in results['special']:
+                        results['special'].append(key)
+
+        # 2. 정기 요일 휴무 체크
+        day_map = {
+            '월': 'Mon', '화': 'Tue', '수': 'Wed', '목': 'Thu', '금': 'Fri', '토': 'Sat', '일': 'Sun'
+        }
+        for kor, eng in day_map.items():
+            if f"{kor}요일" in rest_text or f"매주 {kor}" in rest_text:
+                results['weekly'].append(eng)
+
+        return results
 
     def parse_date(self, date_str):
         if not date_str or len(str(date_str)) != 8:
@@ -297,23 +429,120 @@ class Command(BaseCommand):
             return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
         except:
             return None
-        
-    def create_tags(self, trip, item):
-        tags_to_create = []
 
+    def parse_business_hours(self, time_str):
+        """계절별/월별 정보를 인식하여 현재 시점에 가장 적합한 운영 시간 추출"""
+        if not time_str:
+            return None, None
+        
+        import re
+        from datetime import datetime
+        current_month = datetime.now().month
+
+        # <br>이나 공백 등으로 문장을 분리
+        segments = re.split(r'<br>|\n|\|', time_str)
+        
+        season_results = []
+        
+        for seg in segments:
+            # 1. 월 범위 추출 (예: 3월~10월, 11~2월)
+            month_match = re.search(r'(\d+)\s*월?\s*[~-]\s*(\d+)\s*월?', seg)
+            # 2. 시간 범위 추출 (06:00~18:00 등)
+            time_match = re.search(r'(\d{1,2}(?::\d{2}|시))', seg)
+            
+            if time_match:
+                # 해당 라인에서 시간 쌍 추출 (기존 logic 활용)
+                ot, ct = self._extract_time_range(seg)
+                if not ot: continue
+                
+                if month_match:
+                    start_m, end_m = map(int, month_match.groups())
+                    # 월 범위 계산 (예: 11~2월 같은 역전 범위 처리)
+                    if start_m <= end_m:
+                        in_season = start_m <= current_month <= end_m
+                    else: # 11월 ~ 2월인 경우
+                        in_season = (current_month >= start_m or current_month <= end_m)
+                    
+                    if in_season:
+                        return ot, ct # 현재 계절에 맞으면 즉시 반환
+                    
+                season_results.append((ot, ct))
+
+        # 맞는 계절을 못 찾았다면 첫 번째로 발견된 시간 반환
+        if season_results:
+            return season_results[0]
+            
+        # 마지막 보루: 전체 텍스트에서 가장 먼저 보이는 시간 쌍이라도 찾기
+        return self._extract_time_range(time_str)
+
+    def _extract_time_range(self, text):
+        """문자열에서 단일 시간 쌍(HH:MM~HH:MM) 추출 Helper"""
+        import re
+        # 1. HH:MM 형식
+        match_hm = re.search(r'(\d{1,2}:\d{2})\s*[~-]\s*(\d{1,2}:\d{2})', text)
+        if match_hm:
+            o, c = match_hm.groups()
+            return f"{int(o.split(':')[0]):02d}:{o.split(':')[1]}", f"{int(c.split(':')[0]):02d}:{c.split(':')[1]}"
+        
+        # 2. HH시 형식
+        match_si = re.search(r'(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~-]\s*(\d{1,2})시(?:\s*(\d{1,2})분)?', text)
+        if match_si:
+            oh, om, ch, cm = match_si.groups()
+            return f"{int(oh):02d}:{int(om or 0):02d}", f"{int(ch):02d}:{int(cm or 0):02d}"
+        
+        return None, None
+        
+    def create_tags(self, trip, item, common_data, intro_data):
+        tags_to_create = set() # 중복 방지를 위해 set 사용
+
+        # 1. 지역/도시 태그
         if trip.region:
-            tags_to_create.append(f"#{trip.region.name}")
-
+            tags_to_create.add(f"#{trip.region.name}")
         if trip.city:
-            tags_to_create.append(f"#{trip.city.name}")
+            tags_to_create.add(f"#{trip.city.name}")
 
+        # 2. 카테고리/분류 태그 (cat3 활용)
+        cat3 = item.get('cat3', '')
+        CAT3_TAGS = {
+            'A05020900': ['#카페', '#디저트', '#분위기좋은'],
+            'A02010800': ['#전시회', '#문화생활'],
+            'A01010100': ['#자연', '#풍경명소'],
+            'A02020600': ['#전통시장', '#쇼핑'],
+            'A02030100': ['#사찰', '#역사'],
+            'A02050100': ['#유원지', '#테마파크'],
+        }
+        if cat3 in CAT3_TAGS:
+            for t in CAT3_TAGS[cat3]: tags_to_create.add(t)
+
+        # 3. 제목 키워드 분석 (대폭 확장)
         title = item.get('title', '')
-        keywords = ['맛집', '카페', '호텔', '바다', '산', '박물관', '공원', 
-                '사찰', '전통', '야경', '데이트', '가족', '아이', '체험']
+        keyword_map = {
+            '맛집': '#맛집', '카페': '#카페', '전망대': '#야경명소', 
+            '공원': '#산책로', '해수욕장': '#바다', '미술관': '#예술', 
+            '박물관': '#교육', '캠핑': '#캠핑', '온천': '#힐링',
+            '야경': '#야경', '일출': '#일출', '스타필드': '#복합문화공간'
+        }
+        for kw, tag in keyword_map.items():
+            if kw in title:
+                tags_to_create.add(tag)
+
+        # 4. 개요 및 상세 정보 시설 분석 (Facility tagging)
+        # overview, intro_data(parking) 등에서 키워드 추출
+        full_text = f"{item.get('title', '')} {common_data.get('overview', '')} {intro_data.get('parking', '')}"
         
-        for keyword in keywords:
-            if keyword in title:
-                tags_to_create.append(f"#{keyword}")
+        facility_map = {
+            '주차': '#주차가능',
+            '반려동물': '#애견동반',
+            '애완동물': '#애견동반',
+            '유모차': '#아이와함께',
+            '무선 인터넷': '#WiFi',
+            '와이파이': '#WiFi',
+            '포토존': '#인생샷',
+            '장애인': '#배리어프리',
+        }
+        for kw, tag in facility_map.items():
+            if kw in full_text:
+                tags_to_create.add(tag)
 
         for tag_name in tags_to_create:
             tag, _ = Tag.objects.get_or_create(name=tag_name)
@@ -329,14 +558,25 @@ class Command(BaseCommand):
             '38': ('전남', 'jeonnam'), '39': ('제주', 'jeju'),
         }
         region_info = AREA_MAP.get(str(areacode), ('기타', 'etc'))
+        slug = region_info[1]
+        
+        if slug in self._region_cache:
+            return self._region_cache[slug]
+
         region, _ = Region.objects.get_or_create(
-            slug=region_info[1],
+            slug=slug,
             defaults={'name': region_info[0], 'is_active': True}
         )
+        self._region_cache[slug] = region
         return region
 
     def get_or_create_city(self, sigungucode, area_code, region):
-        """시군구 실제 이름 매핑"""
+        """시군구 실제 이름 매핑 및 캐싱"""
+        map_key = f"{area_code}_{sigungucode}"
+        cache_key = (region.id, map_key)
+        
+        if cache_key in self._city_cache:
+            return self._city_cache[cache_key]
 
         # 전국 시군구 매핑
         SIGUNGU_MAP = {
@@ -364,8 +604,7 @@ class Command(BaseCommand):
             '4_9': '군위군', '4_99': '대구 전체',
             
             # 광주 (5)
-            '5_1': '광산구', '5_2': '남구', '5_3': '동구', '5_4': 
-            '북구', '5_5': '서구', '5_99': '광주 전체',
+            '5_1': '광산구', '5_2': '남구', '5_3': '동구', '5_4': '북구', '5_5': '서구', '5_99': '광주 전체',
             
             # 부산 (6)
             '6_1': '강서구', '6_2': '금정구', '6_3': '남구', '6_4': '동구',
@@ -447,25 +686,38 @@ class Command(BaseCommand):
             '39_99': '제주 전체',
         }
         
-        map_key = f"{area_code}_{sigungucode}"
         city_name = SIGUNGU_MAP.get(map_key, f'시군구_{sigungucode}')
-        
         city, _ = City.objects.get_or_create(
             external_code=map_key,
             region=region,
             defaults={'name': city_name, 'is_active': True}
         )
+        self._city_cache[cache_key] = city
         return city
 
-    def get_or_create_category(self, contenttypeid):
+    def get_or_create_category(self, contenttypeid, cat3=''):
+        """카테고리 정보 매핑 및 캐싱"""
         CATEGORY_MAP = {
-            '12': '관광지', '14': '문화시설', '15': '축제/공연', '25': '여행코스',
+            '12': '관광지', '14': '문화시설', '15': '축제/공연',
             '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
         }
         category_name = CATEGORY_MAP.get(str(contenttypeid), '기타')
+
+        # 음식점(39)인 경우 cat3 코드로 세분화
+        if str(contenttypeid) == '39':
+            FOOD_MAP = {
+                'A05020100': '한식', 'A05020200': '일식', 'A05020300': '양식', 'A05020900': '카페'
+            }
+            if cat3 in FOOD_MAP:
+                category_name = FOOD_MAP[cat3]
+        
+        if category_name in self._category_cache:
+            return self._category_cache[category_name]
+
         category, _ = Category.objects.get_or_create(
             name=category_name, defaults={'is_active': True}
         )
+        self._category_cache[category_name] = category
         return category
 
     def calculate_score(self, item):
