@@ -339,6 +339,12 @@ class Command(BaseCommand):
             holiday_dict = self.parse_holiday_info(rest_date_source)
             update_defaults['holiday_data'] = holiday_dict
 
+            # [추가] 체류 시간 유추 로직
+            content_type_id = item.get('contenttypeid', '12')
+            cat3 = item.get('cat3', '')
+            title = item.get('title', '')
+            update_defaults['average_duration'] = self.calculate_average_duration(content_type_id, cat3, title)
+
             trip, created = Trip.objects.update_or_create(
                 external_id=content_id,
                 defaults=update_defaults
@@ -353,6 +359,31 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error processing item {item.get('title')}: {str(e)}"))
             return False
+
+    def calculate_average_duration(self, content_type_id, cat3, title):
+        """장소의 성격에 따라 예상 체류 시간 및 안내 문구 유추"""
+        # 1. 카테고리별 기본값 설정
+        duration_map = {
+            '12': 90,  # 관광지
+            '14': 120, # 문화시설
+            '15': 180, # 축제/공연
+            '28': 150, # 레포츠
+            '32': 600, # 숙박
+            '38': 90,  # 쇼핑
+            '39': 60,  # 음식점
+        }
+        
+        duration = duration_map.get(str(content_type_id), 60)
+
+        # 2. 특정 키워드 보정
+        if '카페' in title or cat3 == 'A05020900':
+            duration = 45
+        elif any(kw in title for kw in ['공원', '해수욕장', '수목원', '테마파크']):
+            duration = 150
+        elif any(kw in title for kw in ['전망대', '정류장', '비석', '의거지']):
+            duration = 30
+            
+        return duration
 
     def parse_holiday_info(self, rest_text):
         """'매주 월요일', '연중무휴' 등의 텍스트에서 요일별 휴무 정보 추출 (JSON 구조용)"""
