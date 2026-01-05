@@ -2,11 +2,12 @@ import time
 import json
 from google import genai
 from django.core.management.base import BaseCommand
+from django.db import models
 from trips.models import Trip
 from decouple import config
 
 class Command(BaseCommand):
-    help = 'Enrich trip data with Gemini AI (Extracting precise business hours)'
+    help = 'Enrich trip data with Gemini AI (Extracting precise business hours & Holidays)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -15,6 +16,12 @@ class Command(BaseCommand):
             default=10,
             help='Number of items to process',
         )
+
+    def format_time(self, t_str):
+        """24:00 등의 잘못된 시간 형식을 23:59로 보정"""
+        if not t_str: return "00:00"
+        if t_str.startswith("24:"): return "23:59"
+        return t_str
 
     def handle(self, *args, **options):
         # 1. Gemini 설정
@@ -36,10 +43,14 @@ class Command(BaseCommand):
         # 목록에 명백히 존재하는 가장 안정적인 모델 명칭 사용
         model_name = "gemini-flash-latest" 
 
-        # 2. 가공 대상 선정 (open_time이 비어있고, use_time 원본이 있는 데이터)
+        # 2. 가공 대상 선정 (영업시간이 없거나, 휴무일 정보가 아직 분석되지 않은 데이터)
+        # 모든 휴무일 필드가 False인 것을 '아직 분석 안 됨'의 기준으로 삼습니다.
         target_trips = Trip.objects.filter(
-            open_time__isnull=True,
             use_time__isnull=False
+        ).filter(
+            models.Q(open_time__isnull=True) | 
+            models.Q(is_closed_mon=False, is_closed_tue=False, is_closed_wed=False, 
+                     is_closed_thu=False, is_closed_fri=False, is_closed_sat=False, is_closed_sun=False)
         ).exclude(use_time='')[:options['limit']]
 
         if not target_trips.exists():
@@ -52,16 +63,19 @@ class Command(BaseCommand):
             self.stdout.write(f'--- [{trip.title}] 분석 중 ---')
             
             prompt = f"""
-            너는 여행지 운영시간 분석 전문가야. 
-            아래 제공되는 [이용시간] 텍스트를 분석해서, 현재 시즌(1월)에 가장 적합한 시작시간과 종료시간을 HH:MM 형식으로 추출해줘.
+            너는 여행지 운영 정보 분석 전문가야. 
+            아래 [이용시간]과 [휴무일] 정보를 분석해서 가장 정확한 운영 정보를 추출해줘.
             
             [이용시간]: {trip.use_time}
+            [휴무일]: {trip.rest_date}
             
             [규칙]:
-            1. 반드시 JSON 형식으로만 응답해: {{"open": "HH:MM", "close": "HH:MM"}}
-            2. '상시개방'이거나 시간이 명확하지 않으면 "00:00", "23:59"로 답해줘.
-            3. 월별/계절별로 다르면 현재 1월에 해당하는 시간을 선택해.
-            4. 오직 JSON만 출력하고 다른 설명은 하지마.
+            1. 반드시 JSON 형식으로만 응답해.
+            2. "open": 시작시간(HH:MM), "close": 종료시간(HH:MM).
+            3. "closed_days": 휴무 요일을 리스트 형태로 포함해. (Mon, Tue, Wed, Thu, Fri, Sat, Sun) 
+               예: ["Mon"] 또는 ["Sat", "Sun"]
+            4. '연중무휴'나 '상시개방'이면 "closed_days": [] 로 해줘.
+            5. 오직 JSON만 출력해.
             """
 
             try:
@@ -75,11 +89,22 @@ class Command(BaseCommand):
                 data = json.loads(json_str)
 
                 # 데이터 업데이트
-                trip.open_time = data.get('open')
-                trip.close_time = data.get('close')
+                trip.open_time = self.format_time(data.get('open'))
+                trip.close_time = self.format_time(data.get('close'))
+                
+                # 휴무일 필드 초기화 후 업데이트
+                closed_days = data.get('closed_days', [])
+                trip.is_closed_mon = "Mon" in closed_days
+                trip.is_closed_tue = "Tue" in closed_days
+                trip.is_closed_wed = "Wed" in closed_days
+                trip.is_closed_thu = "Thu" in closed_days
+                trip.is_closed_fri = "Fri" in closed_days
+                trip.is_closed_sat = "Sat" in closed_days
+                trip.is_closed_sun = "Sun" in closed_days
+                
                 trip.save()
 
-                self.stdout.write(self.style.SUCCESS(f"  ✅ 업데이트 완료: {data.get('open')} ~ {data.get('close')}"))
+                self.stdout.write(self.style.SUCCESS(f"  ✅ 업데이트 완료: {data.get('open')}~{data.get('close')} / 휴무: {closed_days}"))
                 
                 # 무료 티어 한도(분당 5회)를 지키기 위해 15초 대기
                 time.sleep(15)

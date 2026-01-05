@@ -7,7 +7,32 @@ from decouple import config
 from datetime import datetime
 
 class Command(BaseCommand):
-    help = 'Import data from TourAPI'
+    help = 'Import and enrich data from TourAPI (South Korea)'
+
+    # 메모리 캐시 변수 정의
+    _region_cache = {}   # {code: region_obj}
+    _city_cache = {}     # {(region_code, city_code): city_obj}
+    _category_cache = {} # {cat3_code: category_obj}
+
+    def _prefetch_caches(self):
+        """DB에 이미 저장된 지역, 시도, 카테고리를 메모리로 미리 로드"""
+        from trips.models import Region, City, Category
+        
+        # 1. 지역 캐시 (slug 기준)
+        for r in Region.objects.all():
+            self._region_cache[r.slug] = r
+        
+        # 2. 도시 캐시 (지역ID와 외부코드 조합)
+        for c in City.objects.all():
+            self._city_cache[(c.region_id, c.external_code)] = c
+            
+        # 3. 카테고리 캐시 (이름 기준)
+        for cat in Category.objects.all():
+            self._category_cache[cat.name] = cat
+            
+        self.stdout.write(self.style.SUCCESS(
+            f"🚀 [Cache Loaded] Regions: {len(self._region_cache)}, Cities: {len(self._city_cache)}, Categories: {len(self._category_cache)}"
+        ))
 
     # python manage.py import_tourapi --area-code=1 --full
 
@@ -115,6 +140,9 @@ class Command(BaseCommand):
             return {}
         
     def handle(self, *args, **options):
+        # 수집 시작 전 캐시 워밍업
+        self._prefetch_caches()
+
         raw_key = config('TOUR_API_KEY')
         API_KEY = unquote(raw_key)
         BASE_URL = 'https://apis.data.go.kr/B551011/KorService2'
@@ -306,6 +334,11 @@ class Command(BaseCommand):
             if ot: update_defaults['open_time'] = ot
             if ct: update_defaults['close_time'] = ct
 
+            # [추가] 휴무 정보 데이터화 로직
+            rest_date_source = intro_data.get('rest_date') or (existing_trip.rest_date if existing_trip else '')
+            holiday_dict = self.parse_holiday_info(rest_date_source)
+            update_defaults['holiday_data'] = holiday_dict
+
             trip, created = Trip.objects.update_or_create(
                 external_id=content_id,
                 defaults=update_defaults
@@ -316,9 +349,46 @@ class Command(BaseCommand):
             if created or not trip.images.exists():
                 self.fetch_images(trip, item['contentid'])
             return True
-            
+        
         except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error processing item {item.get('title')}: {str(e)}"))
             return False
+
+    def parse_holiday_info(self, rest_text):
+        """'매주 월요일', '연중무휴' 등의 텍스트에서 요일별 휴무 정보 추출 (JSON 구조용)"""
+        results = {
+            'weekly': [],   # ["Mon", "Tue"]
+            'special': [],  # ["new_year", "seollal", "chuseok"]
+            'raw': rest_text # 원본 텍스트 보관
+        }
+        
+        if not rest_text or '연중무휴' in rest_text or '무휴' in rest_text:
+            return results
+
+        # 1. 특수 공휴일 체크
+        special_map = {
+            '1월 1일': 'new_year', '신정': 'new_year',
+            '설날': 'seollal', '설·추석': 'seollal', # 설·추석은 둘 다 포함
+            '추석': 'chuseok'
+        }
+        for kw, key in special_map.items():
+            if kw in rest_text:
+                if key == 'seollal' and '설·추석' in rest_text:
+                    results['special'].append('seollal')
+                    results['special'].append('chuseok')
+                else:
+                    if key not in results['special']:
+                        results['special'].append(key)
+
+        # 2. 정기 요일 휴무 체크
+        day_map = {
+            '월': 'Mon', '화': 'Tue', '수': 'Wed', '목': 'Thu', '금': 'Fri', '토': 'Sat', '일': 'Sun'
+        }
+        for kor, eng in day_map.items():
+            if f"{kor}요일" in rest_text or f"매주 {kor}" in rest_text:
+                results['weekly'].append(eng)
+
+        return results
 
     def parse_date(self, date_str):
         if not date_str or len(str(date_str)) != 8:
@@ -457,14 +527,25 @@ class Command(BaseCommand):
             '38': ('전남', 'jeonnam'), '39': ('제주', 'jeju'),
         }
         region_info = AREA_MAP.get(str(areacode), ('기타', 'etc'))
+        slug = region_info[1]
+        
+        if slug in self._region_cache:
+            return self._region_cache[slug]
+
         region, _ = Region.objects.get_or_create(
-            slug=region_info[1],
+            slug=slug,
             defaults={'name': region_info[0], 'is_active': True}
         )
+        self._region_cache[slug] = region
         return region
 
     def get_or_create_city(self, sigungucode, area_code, region):
-        """시군구 실제 이름 매핑"""
+        """시군구 실제 이름 매핑 및 캐싱"""
+        map_key = f"{area_code}_{sigungucode}"
+        cache_key = (region.id, map_key)
+        
+        if cache_key in self._city_cache:
+            return self._city_cache[cache_key]
 
         # 전국 시군구 매핑
         SIGUNGU_MAP = {
@@ -492,8 +573,7 @@ class Command(BaseCommand):
             '4_9': '군위군', '4_99': '대구 전체',
             
             # 광주 (5)
-            '5_1': '광산구', '5_2': '남구', '5_3': '동구', '5_4': 
-            '북구', '5_5': '서구', '5_99': '광주 전체',
+            '5_1': '광산구', '5_2': '남구', '5_3': '동구', '5_4': '북구', '5_5': '서구', '5_99': '광주 전체',
             
             # 부산 (6)
             '6_1': '강서구', '6_2': '금정구', '6_3': '남구', '6_4': '동구',
@@ -575,38 +655,38 @@ class Command(BaseCommand):
             '39_99': '제주 전체',
         }
         
-        map_key = f"{area_code}_{sigungucode}"
         city_name = SIGUNGU_MAP.get(map_key, f'시군구_{sigungucode}')
-        
         city, _ = City.objects.get_or_create(
             external_code=map_key,
             region=region,
             defaults={'name': city_name, 'is_active': True}
         )
+        self._city_cache[cache_key] = city
         return city
 
     def get_or_create_category(self, contenttypeid, cat3=''):
+        """카테고리 정보 매핑 및 캐싱"""
         CATEGORY_MAP = {
             '12': '관광지', '14': '문화시설', '15': '축제/공연',
             '28': '레포츠', '32': '숙박', '38': '쇼핑', '39': '음식점',
         }
-        
         category_name = CATEGORY_MAP.get(str(contenttypeid), '기타')
 
         # 음식점(39)인 경우 cat3 코드로 세분화
         if str(contenttypeid) == '39':
             FOOD_MAP = {
-                'A05020100': '한식',
-                'A05020200': '일식',
-                'A05020300': '양식',
-                'A05020900': '카페'
+                'A05020100': '한식', 'A05020200': '일식', 'A05020300': '양식', 'A05020900': '카페'
             }
             if cat3 in FOOD_MAP:
                 category_name = FOOD_MAP[cat3]
+        
+        if category_name in self._category_cache:
+            return self._category_cache[category_name]
 
         category, _ = Category.objects.get_or_create(
             name=category_name, defaults={'is_active': True}
         )
+        self._category_cache[category_name] = category
         return category
 
     def calculate_score(self, item):

@@ -80,6 +80,10 @@ class Trip(models.Model):
     open_time = models.TimeField(null=True, blank=True, verbose_name="영업 시작 시간")
     close_time = models.TimeField(null=True, blank=True, verbose_name="영업 종료 시간")
 
+    # 운영 및 휴무 정보를 통합 저장하는 JSON 필드
+    # 예: {"weekly": ["Mon"], "special": ["new_year", "seollal"], "raw": "매주 월요일, 신정 휴무"}
+    holiday_data = models.JSONField(default=dict, blank=True, verbose_name="휴무 정보 데이터")
+
     class Meta:
         db_table = 'trips'
 
