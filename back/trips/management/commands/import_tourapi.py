@@ -478,17 +478,24 @@ class Command(BaseCommand):
     def _extract_time_range(self, text):
         """문자열에서 단일 시간 쌍(HH:MM~HH:MM) 추출 Helper"""
         import re
+
+        def sanitize_time(h, m):
+            h, m = int(h), int(m)
+            if h >= 24: # 24:00 등 잘못된 시간 처리
+                h, m = 23, 59
+            return f"{h:02d}:{m:02d}"
+
         # 1. HH:MM 형식
-        match_hm = re.search(r'(\d{1,2}:\d{2})\s*[~-]\s*(\d{1,2}:\d{2})', text)
+        match_hm = re.search(r'(\d{1,2}):(\d{2})\s*[~-]\s*(\d{1,2}):(\d{2})', text)
         if match_hm:
-            o, c = match_hm.groups()
-            return f"{int(o.split(':')[0]):02d}:{o.split(':')[1]}", f"{int(c.split(':')[0]):02d}:{c.split(':')[1]}"
+            oh, om, ch, cm = match_hm.groups()
+            return sanitize_time(oh, om), sanitize_time(ch, cm)
         
         # 2. HH시 형식
         match_si = re.search(r'(\d{1,2})시(?:\s*(\d{1,2})분)?\s*[~-]\s*(\d{1,2})시(?:\s*(\d{1,2})분)?', text)
         if match_si:
             oh, om, ch, cm = match_si.groups()
-            return f"{int(oh):02d}:{int(om or 0):02d}", f"{int(ch):02d}:{int(cm or 0):02d}"
+            return sanitize_time(oh, om or 0), sanitize_time(ch, cm or 0)
         
         return None, None
         
