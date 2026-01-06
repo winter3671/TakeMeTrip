@@ -34,7 +34,7 @@ class Command(BaseCommand):
             f"🚀 [Cache Loaded] Regions: {len(self._region_cache)}, Cities: {len(self._city_cache)}, Categories: {len(self._category_cache)}"
         ))
 
-    # python manage.py import_tourapi --area-code=1 --full
+    # python manage.py import_tourapi --area-code=2 --full
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -102,14 +102,11 @@ class Command(BaseCommand):
             elif isinstance(item, dict):
                 data = item
             
-            # 전화번호(infocenter) 및 기타 정보 파싱
+            # 전화번호 및 필드 통합 파싱
             infocenter = (
-                data.get('infocenter') or 
-                data.get('infocenterfood') or 
-                data.get('infocenterlodging') or
-                data.get('infocentershopping') or
-                data.get('infocenterculture') or
-                data.get('infocenterleports') or ''
+                data.get('infocenter') or data.get('infocenterfood') or 
+                data.get('infocenterlodging') or data.get('infocentershopping') or
+                data.get('infocenterculture') or data.get('infocenterleports') or ''
             )
 
             parking = (
@@ -134,7 +131,13 @@ class Command(BaseCommand):
                 'infocenter': infocenter,
                 'parking': parking,
                 'rest_date': rest_date,
-                'use_time': use_time
+                'use_time': use_time,
+                # 추가 정보 (detail_meta용)
+                'first_menu': data.get('firstmenu') or data.get('treatmenu'),
+                'checkin': data.get('checkintime'),
+                'checkout': data.get('checkouttime'),
+                'stroller': data.get('chkbabycarriage') or data.get('chkbabycarriageculture') or data.get('chkbabycarriageshopping'),
+                'pet': data.get('chkpet') or data.get('chkpetculture') or data.get('chkpetleports') or data.get('chkpetshopping'),
             }
         except:
             return {}
@@ -339,6 +342,27 @@ class Command(BaseCommand):
             first_day_info = next(iter(operating_info['weekly'].values()), {})
             if first_day_info.get('open'): update_defaults['open_time'] = first_day_info['open']
             if first_day_info.get('close'): update_defaults['close_time'] = first_day_info['close']
+
+            # [핵심] detail_meta 구성 (카테고리별 특화 데이터)
+            detail_meta = {}
+            if parking_source := intro_data.get('parking') or (existing_trip.parking if existing_trip else ''):
+                detail_meta['parking_detail'] = parking_source
+            
+            # 카테고리별 분기
+            if content_type_id == '39': # 음식점
+                if best_menu := intro_data.get('first_menu'):
+                    detail_meta['best_menu'] = best_menu
+            elif content_type_id == '32': # 숙박
+                if ci := intro_data.get('checkin'): detail_meta['check_in'] = ci
+                if co := intro_data.get('checkout'): detail_meta['check_out'] = co
+            
+            # 공통 편의시설
+            if intro_data.get('stroller') and '없음' not in intro_data.get('stroller'):
+                detail_meta['stroller_rent'] = True
+            if intro_data.get('pet') and '불가' not in intro_data.get('pet'):
+                detail_meta['pet_allowed'] = True
+
+            update_defaults['detail_meta'] = detail_meta
 
             # [추가] 체류 시간 유추 로직
             content_type_id = item.get('contenttypeid', '12')

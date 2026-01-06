@@ -87,6 +87,9 @@ class Trip(models.Model):
     # 예: {"weekly": {"Mon": {"open": "09:00", ...}}, "special": ["new_year"], "raw": "..."}
     operating_info = models.JSONField(default=dict, blank=True, verbose_name="운영 및 휴무 정보 상세")
 
+    # 카테고리별 특화 정보를 저장하는 JSON 필드 (음식점: 대표메뉴, 숙박: 체크인/아웃 등)
+    detail_meta = models.JSONField(default=dict, blank=True, verbose_name="카테고리별 상세 메타 정보")
+
     class Meta:
         db_table = 'trips'
 
