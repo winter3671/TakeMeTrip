@@ -32,8 +32,6 @@
 * **Database**: SQLite (Development)
 * **Auth**: dj-rest-auth, simple-jwt (JWT Cookie Auth), django-allauth (Social Login)
 * **Data Collection**: Public Data Portal (TourAPI 4.0), `requests`, `python-decouple`
-* **AI Enrichment**: Google Gemini AI (gemini-flash-latest) via `google-genai` SDK
-* **Performance**: In-memory Caching for high-speed data import
 * **Algorithm**: Custom Heuristic Algorithm (Weighted Scoring + Nearest Neighbor)
 
 ### Frontend
@@ -77,21 +75,7 @@
 * **소셜 인터랙션**: 좋아요(Like), 조회수(Hits), 댓글(Comment) 기능을 통해 여행 정보를 활발히 공유합니다.
 * **검색 필터**: 제목, 내용, 작성자 등 다양한 조건으로 게시글을 검색할 수 있습니다.
 
-### 4. 🚀 고도화된 데이터 엔지니어링 (Advanced Data Engineering)
-* **하이브리드 AI 데이터 정제 (Hybrid AI Enrichment)**
-    * **Rule-based + AI**: 정규표현식(Regex)을 통한 1차 파싱 후, 복잡한 비정형 데이터는 **Gemini AI**를 활용해 구조화된 데이터(영업시간, 휴무일)로 변환합니다.
-    * **쿼터 최적화**: 규칙 기반 파싱을 우선순위에 두어 AI API 호출을 최소화하는 효율적인 파이프라인을 구축했습니다.
-* **유연한 JSON 데이터 구조 (Scalable Holiday Data)**
-    * 복잡한 휴무 규칙(매주 특정 요일, 신정, 설날/추석 연휴 등)을 단일 **JSONField**에 통합 관리합니다.
-    * 마이그레이션 없이 새로운 휴무 규칙을 추가할 수 있는 확장성을 확보했습니다.
-* **지능형 체류 시간 예측 (Heuristic Stay Duration)**
-    * 장소의 카테고리와 명칭 키워드를 분석하여 **권장 체류 시간**을 자동으로 부여합니다. (예: 카페 45분, 미술관 120분)
-    * 이는 플래너 스케줄링 시 현실적인 타임라인을 생성하는 핵심 기초 데이터가 됩니다.
-* **에러 복구 및 성능 최적화**
-    * **Memory Caching**: 수집 과정에서 빈번한 지역/카테고리 조회를 메모리 캐싱으로 처리해 수집 속도를 3배 이상 향상시켰습니다.
-    * **Resumable Import**: 장애 발생 시 중단된 지점부터 다시 수집할 수 있는 안정적인 스크립트를 구현했습니다.
-
-### 5. 🎯 운명의 다트 게임 (Destiny Dart Game)
+### 4. 🎯 운명의 다트 게임 (Destiny Dart Game)
 * **게이미피케이션(Gamification)**: 여행지를 결정하지 못해 고민하는 사용자들을 위해, 다트를 던져 랜덤으로 여행지를 추천해주는 엔터테인먼트 요소를 추가했습니다.
 * **인터랙티브 UI**: 한국 지도 위로 다트가 날아가 꽂히는 애니메이션과 타격 효과(Ripple)를 구현하여 시각적인 재미를 제공합니다.
 * **유기적인 서비스 연동**: 게임 결과로 나온 지역(예: 경주, 강릉 등)에서 '추천 장소 보기' 버튼을 클릭하면, 여행지 목록 페이지로 리다이렉트됩니다. 이때 해당 지역 필터가 자동으로 적용되어, 사용자는 즉시 그 지역의 관광지 정보를 탐색할 수 있습니다.
@@ -197,12 +181,23 @@ npm run dev
     * DRF의 `ArticleDetailSerializer` 내부에 `CourseSerializer`를, 그 내부에 `CourseDetailSerializer`를 중첩(Nested)시켜 계층적인 JSON 응답을 구성. 
     * 프론트엔드에서는 이를 `computed` 속성으로 받아 Day별로 그룹화하여 렌더링.
 
-### 4. 비정형 데이터 구조화 및 AI API 쿼터 제한
-* **문제**: 관광공사의 비정형 텍스트(영업시간, 휴무일)를 수동 파싱하기엔 예외가 너무 많고, AI(Gemini)만 사용하기엔 무료 티어의 분당 호출 제한(RPM) 및 일일 할당량 결핍 문제 발생.
-* **해결**: 
-    * **Hybrid Pipeline**: 정규표현식 기반의 Rule-based 파싱을 먼저 수행하여 70% 이상의 정형 데이터를 우선 처리.
-    * **Fallback to AI**: 파싱에 실패한 복잡한 텍스트만 선별하여 Gemini API로 전달하는 2단계 검증 시스템 구축.
-    * **Rate Limiting & Caching**: API 호출 간 Sleep 간격을 조정하고, 동일 결과에 대한 메모리 캐싱을 도입하여 API 소비 효율을 최적화함.
+---
+
+## 🚀 프로젝트 종료 후 고도화 (Post-Project Evolution)
+2025.12.26 프로젝트 공식 종료 이후, 실제 대량의 공공 데이터를 다루며 발생한 기술적 한계(비정형 데이터 파싱 예외, 수집 성능 저하)를 해결하고 서비스의 완성도를 높이기 위해 자발적인 고도화 작업을 진행하였습니다.
+
+### 1. 하이브리드 AI 데이터 엔지니어링 (Advanced Data Engineering)
+* **비정형 데이터의 구조화 (Hybrid AI Enrichment)**
+    * **문제**: 한국관광공사(TourAPI)의 영업시간/휴무일 데이터는 정해진 형식이 없는 자유 텍스트로 제공되어 서비스에 직접 활용하기가 매우 어려웠습니다. 기존 정규표현식만으로는 수많은 예외 케이스를 처리하는 데 한계가 있었습니다.
+    * **해결**: 정규표현식 기반의 **Rule-based 파싱**을 1차로 수행하여 70%를 처리하고, 파싱에 실패한 복잡한 예외 케이스만 **Gemini AI**로 전달하는 **2단계 검증 파이프라인**을 구축했습니다. 이를 통해 AI API 호출 비용(Quota)을 효율적으로 관리하면서도 데이터 구조화의 정확도를 극대화했습니다.
+* **지능형 체류 시간 예측 (Heuristic Stay Duration)**
+    * 플래너의 현실성을 높이기 위해 장소 카테고리와 명칭 키워드를 분석하여 권장 체류 시간(카페 45분, 미술관 120분 등)을 자동으로 부여하는 휴리스틱 로직을 적용했습니다.
+
+### 2. 시스템 안정성 및 성능 최적화 (Optimization)
+* **In-Memory Caching 도입**
+    * 데이터 수집 과정에서 빈번하게 발생하는 지역 코드, 시군구 코드 및 카테고리 정보 조회(DB Query)를 메모리 캐싱(`dict` 자료구조 활용)으로 전환하여, 데이터 수집 속도를 기존 대비 **3배 이상 향상**시켰습니다.
+* **Scalable Holiday Data 구조**
+    * 복잡한 휴무 규칙(매주 특정 요일, 신정, 설날/추석 연휴 등)을 단일 **JSONField**로 통합 관리하도록 아키텍처를 개선했습니다. 이를 통해 DB 스키마 마이그레이션 없이도 새로운 형태의 휴무 정보를 유연하게 수용할 수 있는 확장성을 확보했습니다.
 
 ---
 
